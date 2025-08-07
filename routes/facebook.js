@@ -12,7 +12,7 @@ const router = express.Router();
 // Generate Facebook OAuth URL
 router.get('/auth-url', authenticateToken, (req, res) => {
   try {
-    const redirectUri = `${process.env.BASE_URL}/auth/facebook/callback`;
+    const redirectUri = `${process.env.BASE_URL}/api/facebook/callback`;
     const scope = 'pages_messaging,pages_manage_metadata,pages_read_engagement';
     
     const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
