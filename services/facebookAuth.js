@@ -15,7 +15,7 @@ export const exchangeCodeForToken = async (code) => {
       }
     });
   console.log(response);
-   return;
+   return response;
   try {
   // const response = await axios.get(`${FACEBOOK_API_BASE}/oauth/access_token`, {
     //   params: {
