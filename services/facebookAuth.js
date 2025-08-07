@@ -60,7 +60,7 @@ export const refreshFacebookToken = async (currentToken) => {
         fb_exchange_token: currentToken
       }
     });
-    
+    console.log(response)
     return response.data.access_token;
   } catch (error) {
     throw new Error(`Token refresh failed: ${error.message}`);
