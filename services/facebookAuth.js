@@ -9,7 +9,7 @@ export const exchangeCodeForToken = async (code) => {
       params: {
         client_id: process.env.FACEBOOK_APP_ID,
         client_secret: process.env.FACEBOOK_APP_SECRET,
-        redirect_uri: `${process.env.BASE_URL}/auth/facebook/callback`,
+        redirect_uri: `${process.env.BASE_URL}/api/facebook/callback`,
         code: code
       }
     });
