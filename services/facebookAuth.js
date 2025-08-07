@@ -4,7 +4,17 @@ import db from '../config/database.js';
 const FACEBOOK_API_BASE = `https://graph.facebook.com/${process.env.FACEBOOK_API_VERSION}`;
 
 export const exchangeCodeForToken = async (code) => {
-  
+   const response = await axios.get(`${FACEBOOK_API_BASE}/oauth/access_token`, {
+      params: {
+        grant_type: 'fb_exchange_token',
+        client_id: process.env.FACEBOOK_APP_ID,
+        client_secret: process.env.FACEBOOK_APP_SECRET,
+        redirect_uri: `${process.env.BASE_URL}/api/facebook/callback`,
+        // code: code
+        fb_exchange_token: code
+      }
+    });
+  console.log(response)return
   try {
   // const response = await axios.get(`${FACEBOOK_API_BASE}/oauth/access_token`, {
     //   params: {
