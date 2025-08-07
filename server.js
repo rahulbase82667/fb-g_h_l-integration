@@ -28,6 +28,7 @@ const limiter = rateLimit({
   message: { error: 'Too many requests, please try again later' }
 });
 app.use('/api', limiter);
+app.set('trust proxy', true);
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
