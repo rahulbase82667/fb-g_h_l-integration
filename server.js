@@ -11,10 +11,10 @@ dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+app.set('trust proxy', true);
 
 // Security middleware
 app.use(helmet());
-app.set('trust proxy', true);
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? [`${process.env.ORIGIN_1}`] 
