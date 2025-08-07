@@ -14,6 +14,7 @@ const port = process.env.PORT || 3000;
 
 // Security middleware
 app.use(helmet());
+app.set('trust proxy', true);
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? [`${process.env.ORIGIN_1}`] 
@@ -28,7 +29,6 @@ const limiter = rateLimit({
   message: { error: 'Too many requests, please try again later' }
 });
 app.use('/api', limiter);
-app.set('trust proxy', true);
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
