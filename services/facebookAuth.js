@@ -1,7 +1,8 @@
 import axios from 'axios';
 import db from '../config/database.js';
 
-const FACEBOOK_API_BASE = `https://graph.facebook.com/${process.env.FACEBOOK_API_VERSION}`;
+// const FACEBOOK_API_BASE = `https://graph.facebook.com/${process.env.FACEBOOK_API_VERSION}`;
+const FACEBOOK_API_BASE = `https://graph.facebook.com/v23.0`;
 
 export const exchangeCodeForToken = async (code) => {
   try {
