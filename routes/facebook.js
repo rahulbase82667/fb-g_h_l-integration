@@ -184,7 +184,7 @@ router.post('/test-cron-job', authenticateToken, async (req, res) => {
     res.json({ 
       success: true, 
       message: 'Cron job test completed',
-      results 
+      results: results
     });
     
   } catch (error) {
