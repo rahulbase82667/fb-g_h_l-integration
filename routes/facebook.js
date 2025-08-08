@@ -3,10 +3,12 @@ import { authenticateToken } from '../middleware/auth.js';
 import { 
   exchangeCodeForToken, 
   getFacebookUserInfo, 
-  storeFacebookAccount 
+  storeFacebookAccount,
+  validateFacebookToken,
+  refreshFacebookToken
 } from '../services/facebookAuth.js';
-import db from '../config/database.js';
-
+import db from '../config/database.js'; 
+import FacebookAccount from '../models/FacebookAccount.js';
 const router = express.Router();
 
 // Generate Facebook OAuth URL
@@ -97,4 +99,96 @@ router.delete('/accounts/:id', authenticateToken, async (req, res) => {
   }
 });
 
+router.get('/test/token/validation', async (req, res) => {
+  const {token}=req.query;
+  try {
+    const isValidToken = await validateFacebookToken(token);
+    res.json({ success: true, isValidToken });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+})
+
+// Test token refresh
+router.post('/test-refresh/:id', authenticateToken, async (req, res) => {
+  try {
+    const account = await FacebookAccount.findById(req.params.id);
+    if (!account) {
+      return res.status(404).json({ success: false, error: 'Account not found' });
+    }
+    
+    console.log('Testing token refresh for account:', account.facebook_user_id);
+    
+    // Try to refresh token
+    const newToken = await refreshFacebookToken(account.access_token);
+    
+    // Update in database
+    await FacebookAccount.updateToken(account.id, newToken);
+    
+    res.json({ 
+      success: true, 
+      message: 'Token refreshed successfully',
+      oldToken: account.access_token.substring(0, 10) + '...',
+      newToken: newToken.substring(0, 10) + '...'
+    });
+    
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Add this to routes/facebook.js for testing
+router.post('/test-cron-job', authenticateToken, async (req, res) => {
+  try {
+    // const { FacebookAccount } = await import('../models/FacebookAccount.js');
+    // const { refreshFacebookToken, validateFacebookToken } = await import('../services/facebookAuth.js');
+    
+    console.log('🔄 Testing token refresh job...');
+    
+    const expiringAccounts = await FacebookAccount.getExpiringSoon();
+    console.log(`Found ${expiringAccounts.length} accounts expiring soon`);
+    
+    const results = [];
+    
+    for (const account of expiringAccounts) {
+      try {
+        const isValid = await validateFacebookToken(account.access_token);
+        
+        if (isValid) {
+          const newToken = await refreshFacebookToken(account.access_token);
+          await FacebookAccount.updateToken(account.id, newToken);
+          
+          results.push({
+            account_id: account.id,
+            facebook_user_id: account.facebook_user_id,
+            status: 'refreshed'
+          });
+        } else {
+          await FacebookAccount.markAsExpired(account.id);
+          results.push({
+            account_id: account.id,
+            facebook_user_id: account.facebook_user_id,
+            status: 'expired'
+          });
+        }
+      } catch (error) {
+        results.push({
+          account_id: account.id,
+          facebook_user_id: account.facebook_user_id,
+          status: 'failed',
+          error: error.message
+        });
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Cron job test completed',
+      results 
+    });
+    
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 export default router;

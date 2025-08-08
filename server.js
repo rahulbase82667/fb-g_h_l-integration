@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { testConnection } from './config/database.js';
 import authRoutes from './routes/auth.js';
 import facebookRoutes from './routes/facebook.js';
+import startTokenRefreshJob from './services/tokenRefreshJob.js';
 
 dotenv.config();
 
@@ -94,6 +95,9 @@ const startServer = async () => {
       console.log(` Server running on port ${port}`);
       console.log(`Environment: ${process.env.NODE_ENV}`);
       console.log(` Health check: http://localhost:${port}/health`);
+        
+      // Start the token refresh cron job 
+      startTokenRefreshJob();
     });
     
   } catch (error) {

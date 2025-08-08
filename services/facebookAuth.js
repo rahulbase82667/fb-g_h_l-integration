@@ -50,7 +50,7 @@ export const validateFacebookToken = async (accessToken) => {
     return false;
   }
 };
-
+// This exchanges a short-lived token for a long-lived token (60 days)
 export const refreshFacebookToken = async (currentToken) => {
   try {
     const response = await axios.get(`${FACEBOOK_API_BASE}/oauth/access_token`, {
@@ -61,7 +61,7 @@ export const refreshFacebookToken = async (currentToken) => {
         fb_exchange_token: currentToken
       }
     });
-    console.log(response)
+    // console.log(response)
     return response.data.access_token;
   } catch (error) {
     throw new Error(`Token refresh failed: ${error.message}`);
@@ -71,7 +71,7 @@ export const refreshFacebookToken = async (currentToken) => {
 export const storeFacebookAccount = async (userId, facebookUserData, accessToken) => {
   try {
     const query = `
-      INSERT INTO facebook_accounts 
+      INSERT INTO facebook_accounts
       (user_id, facebook_user_id, access_token, account_name, token_expires_at, status) 
       VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 60 DAY), 'active')
       ON DUPLICATE KEY UPDATE 
