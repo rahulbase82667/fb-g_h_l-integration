@@ -8,7 +8,7 @@ import {
   refreshFacebookToken
 } from '../services/facebookAuth.js';
 import db from '../config/database.js'; 
-import FacebookAccount from '../models/FacebookAccount.js';
+import {FacebookAccount} from '../models/FacebookAccount.js';
 const router = express.Router();
 
 // Generate Facebook OAuth URL
