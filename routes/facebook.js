@@ -163,6 +163,7 @@ router.post('/test-cron-job', authenticateToken, async (req, res) => {
             facebook_user_id: account.facebook_user_id,
             status: 'refreshed'
           });
+          console.log('results are: ', results);
         } else {
           await FacebookAccount.markAsExpired(account.id);
           results.push({
@@ -170,6 +171,8 @@ router.post('/test-cron-job', authenticateToken, async (req, res) => {
             facebook_user_id: account.facebook_user_id,
             status: 'expired'
           });
+          console.log('results are in error: ', results);
+
         }
       } catch (error) {
         results.push({
