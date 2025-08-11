@@ -1,5 +1,5 @@
 // routes/ghl.js
-import express from 'express';
+import express, { json } from 'express';
 import session from 'express-session';
 import MySQLStore from 'express-mysql-session';
 import { authenticateToken } from '../middleware/auth.js';
@@ -94,6 +94,9 @@ router.get('/auth-url', authenticateToken, (req, res) => {
 
 // Handle GHL OAuth callback
 router.get('/callback', async (req, res) => {
+  return res.status(200).json({
+    user:req.session.userId
+  })
   try {
     const { code, location_id } = req.query;
 
