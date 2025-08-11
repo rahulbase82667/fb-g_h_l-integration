@@ -23,8 +23,8 @@ router.get('/auth-url', authenticateToken, (req, res) => {
     const authUrl = `https://marketplace.gohighlevel.com/oauth/chooselocation?` +
       `response_type=code` +
       `&client_id=${process.env.GHL_CLIENT_ID}` +
-      `&redirect_uri=${encodeURIComponent(process.env.GHL_REDIRECT_URI)}` +
-      `&scope=${encodeURIComponent(scope)}` +
+      `&redirect_uri=${encodeURIComponent(process.env.GHL_REDIRECT_URI+`?state=${state}`)}` +
+      `&scope=${encodeURIComponent(scope)}` 
       `&state=${state}`;    
     
     res.json({ 
