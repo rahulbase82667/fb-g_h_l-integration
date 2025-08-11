@@ -95,12 +95,12 @@ router.get('/auth-url', authenticateToken, (req, res) => {
 // Handle GHL OAuth callback
 router.get('/callback', async (req, res) => {
   console.log('GHL callback received');
-  // console.log('Session data:', {
-  //     userId: req.session.userId,
-  //     timestamp: req.session.authTimestamp,
-  //     sessionId: req.sessionID,
-  //     fullSession: req.session
-  //   });
+  console.log('Session data:', {
+      userId: req.session.userId,
+      timestamp: req.session.authTimestamp,
+      sessionId: req.sessionID,
+      fullSession: req.session
+    });
 
   try {
     const { code, location_id } = req.query;
