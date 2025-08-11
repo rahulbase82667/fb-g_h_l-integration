@@ -52,7 +52,8 @@ const oauthSessionMiddleware = session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 1800000 // 30 minutes
+    maxAge: 1800000, // 30 minutes,
+    userId:null
   }
 });
 
