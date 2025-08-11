@@ -3,7 +3,7 @@ import express from 'express';
 import session from 'express-session';
 import MySQLStore from 'express-mysql-session';
 import { authenticateToken } from '../middleware/auth.js';
-import { isExpired } from '../utils/timeHelpers.js';
+import isExpired  from '../utils/timeHelpers.js';
 
 import {
   exchangeCodeForToken,
