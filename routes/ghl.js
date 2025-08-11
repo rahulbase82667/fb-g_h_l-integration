@@ -95,13 +95,13 @@ router.get('/auth-url', authenticateToken, (req, res) => {
 // Handle GHL OAuth callback
 router.get('/callback', async (req, res) => {
   console.log('GHL callback received');
-  console.log('Cookies:', req.headers.cookie);
-  console.log('Session data:', {
-      userId: req.session.userId,
-      timestamp: req.session.authTimestamp,
-      sessionId: req.sessionID,
-      fullSession: req.session
-    });
+  console.log('id:', req.userId);
+  // console.log('Session data:', {
+  //     userId: req.session.userId,
+  //     timestamp: req.session.authTimestamp,
+  //     sessionId: req.sessionID,
+  //     fullSession: req.session
+  //   });
   return res.status(200).json({
     user:`test: ${req.session.userId}`
   })
