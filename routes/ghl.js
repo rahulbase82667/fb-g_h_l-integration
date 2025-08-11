@@ -42,7 +42,8 @@ const sessionStore = new MySQLStoreClass({
 });
 
 // Session middleware for OAuth flows
-router.use('/auth-url', session({
+// --- Create a single OAuth session middleware ---
+const oauthSessionMiddleware = session({
   key: 'ghl_oauth_session',
   secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
   store: sessionStore,
@@ -53,20 +54,11 @@ router.use('/auth-url', session({
     httpOnly: true,
     maxAge: 1800000 // 30 minutes
   }
-}));
+});
 
-router.use('/callback', session({
-  key: 'ghl_oauth_session',
-  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
-  store: sessionStore,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 1800000 // 30 minutes
-  }
-}));
+// --- Apply it only to /auth-url and /callback ---
+router.use(['/auth-url', '/callback'], oauthSessionMiddleware);
+
 
 // Generate GHL OAuth URL
 router.get('/auth-url', authenticateToken, (req, res) => {
