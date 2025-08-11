@@ -45,7 +45,7 @@ const sessionStore = new MySQLStoreClass({
 // --- Create a single OAuth session middleware ---
 const oauthSessionMiddleware = session({
   key: 'ghl_oauth_session',
-  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
+  secret:  process.env.JWT_SECRET,
   store: sessionStore,
   resave: false,
   saveUninitialized: false,
@@ -68,7 +68,7 @@ router.get('/auth-url', authenticateToken, (req, res) => {
     // Store user ID in session for later use
     req.session.userId = req.user.id;
     req.session.authTimestamp = Date.now();
-
+    
     console.log('Starting GHL OAuth for user:', req.user.id);
 
     const authUrl = `https://marketplace.gohighlevel.com/oauth/chooselocation?` +
