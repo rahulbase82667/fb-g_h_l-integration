@@ -65,6 +65,7 @@ router.get('/auth-url', authenticateToken, (req, res) => {
     const scope = 'locations/read contacts/write contacts/read conversations/write conversations/read';
 
     // Store user ID in session for later use
+ 
     req.session.userId = req.user.id;
     req.session.authTimestamp = Date.now();
     
@@ -94,6 +95,7 @@ router.get('/auth-url', authenticateToken, (req, res) => {
 // Handle GHL OAuth callback
 router.get('/callback', async (req, res) => {
   console.log('GHL callback received');
+  console.log('Cookies:', req.headers.cookie);
   console.log('Session data:', {
       userId: req.session.userId,
       timestamp: req.session.authTimestamp,
