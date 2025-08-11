@@ -13,7 +13,7 @@ import {
   validateGHLToken
 } from '../services/ghlAuth.js';
 import { GHLAccount } from '../models/GHLAccount.js';
-import { pool } from '../config/database.js';
+import pool  from '../config/database.js';
 
 const router = express.Router();
 
