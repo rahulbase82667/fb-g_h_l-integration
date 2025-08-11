@@ -1,13 +1,11 @@
 // routes/ghl.js
-import express, { json } from 'express';
+import express from 'express';
 import session from 'express-session';
 import MySQLStore from 'express-mysql-session';
 import { authenticateToken } from '../middleware/auth.js';
-import isExpired  from '../utils/timeHelpers.js';
-
-import {
-  exchangeCodeForToken,
-  getGHLUserInfo,
+import { 
+  exchangeCodeForToken, 
+  getGHLUserInfo, 
   getGHLLocations,
   storeGHLAccount,
   testGHLConnection,
@@ -15,7 +13,7 @@ import {
   validateGHLToken
 } from '../services/ghlAuth.js';
 import { GHLAccount } from '../models/GHLAccount.js';
-import pool from '../config/database.js';
+import { pool } from '../config/database.js';
 
 const router = express.Router();
 
@@ -41,10 +39,10 @@ const sessionStore = new MySQLStoreClass({
   }
 });
 
-// Create OAuth session middleware
-const oauthSessionMiddleware = session({
+// Session middleware for OAuth flows
+router.use('/auth-url', session({
   key: 'ghl_oauth_session',
-  secret: process.env.JWT_SECRET,
+  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
   store: sessionStore,
   resave: false,
   saveUninitialized: false,
@@ -53,33 +51,41 @@ const oauthSessionMiddleware = session({
     httpOnly: true,
     maxAge: 1800000 // 30 minutes
   }
-});
+}));
 
-// --- Apply it only to /auth-url and /callback ---
-router.use(oauthSessionMiddleware);
-
+router.use('/callback', session({
+  key: 'ghl_oauth_session',
+  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
+  store: sessionStore,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 1800000 // 30 minutes
+  }
+}));
 
 // Generate GHL OAuth URL
 router.get('/auth-url', authenticateToken, (req, res) => {
   try {
     const scope = 'locations/read contacts/write contacts/read conversations/write conversations/read';
-
+    
     // Store user ID in session for later use
- 
     req.session.userId = req.user.id;
     req.session.authTimestamp = Date.now();
     
     console.log('Starting GHL OAuth for user:', req.user.id);
-
+    
     const authUrl = `https://marketplace.gohighlevel.com/oauth/chooselocation?` +
       `response_type=code` +
       `&client_id=${process.env.GHL_CLIENT_ID}` +
       `&redirect_uri=${encodeURIComponent(process.env.GHL_REDIRECT_URI)}` +
       `&scope=${encodeURIComponent(scope)}`;
-
-    res.json({
-      success: true,
-      authUrl,
+    
+    res.json({ 
+      success: true, 
+      authUrl,  
       message: 'Click the URL to connect your GHL account',
       sessionInfo: {
         userId: req.session.userId,
@@ -94,51 +100,31 @@ router.get('/auth-url', authenticateToken, (req, res) => {
 
 // Handle GHL OAuth callback
 router.get('/callback', async (req, res) => {
-  console.log('GHL callback received');
-  console.log('Session data:', {
-      userId: req.session.userId,
-      timestamp: req.session.authTimestamp,
-      sessionId: req.sessionID,
-      fullSession: req.session
-    });
-
   try {
     const { code, location_id } = req.query;
-
+    
     if (!code) {
-      return res.status(400).json({
-        success: false,
-        error: 'Authorization code missing from GHL callback'
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Authorization code missing from GHL callback' 
       });
     }
 
     // Get user ID from session
-    const getuserId =await GHLAccount.findSessionWithSessionId(req.sessionID);
-    console.log('data from getuserId',getuserId);
-    // const userId=getuserId.userId;
-    // console.log('User ID from session:', userId);
-    // const userId = req.session.userId;
-    return res.status(400).json({
-      test: getuserId
-    })
+    const userId = req.session.userId;
     if (!userId) {
-      return res.status(400).json({
-        success: false,
+      return res.status(400).json({ 
+        success: false, 
         error: 'OAuth session expired. Please try connecting again.',
         needs_restart: true
       });
     }
-    console.log('User ID from session:', userId);
+
     // Check session age (prevent stale sessions)
-    const sessionAge = Date.now() - req.session.authTimestamp;
-    console.log(sessionAge);
+    const sessionAge = Date.now() - (req.session.authTimestamp || 0);
     if (sessionAge > 1800000) { // 30 minutes
-    // const debugInfo = timeHelpers.debugTimestamp(req.session.authTimestamp);
-    // console.log('Session debug:', debugInfo);
-    // if (isExpired(req.session.authTimestamp)) {
       req.session.destroy();
       return res.status(400).json({
-        test:Date.now(),
         success: false,
         error: 'OAuth session expired. Please start the connection process again.',
         needs_restart: true
@@ -169,8 +155,8 @@ router.get('/callback', async (req, res) => {
     });
 
     // Return success response
-    res.json({
-      success: true,
+    res.json({ 
+      success: true, 
       message: 'GHL account connected successfully',
       account: {
         id: accountId,
@@ -181,10 +167,10 @@ router.get('/callback', async (req, res) => {
         connection_test: connectionTest
       }
     });
-
+    
   } catch (error) {
     console.error('GHL callback error:', error);
-
+    
     // Clear session on error
     if (req.session) {
       req.session.destroy((err) => {
@@ -192,8 +178,8 @@ router.get('/callback', async (req, res) => {
       });
     }
 
-    res.status(500).json({
-      success: false,
+    res.status(500).json({ 
+      success: false, 
       error: error.message,
       suggestion: 'Please try connecting your GHL account again.'
     });
@@ -204,9 +190,9 @@ router.get('/callback', async (req, res) => {
 router.get('/accounts', authenticateToken, async (req, res) => {
   try {
     const accounts = await GHLAccount.getActiveWithLocations(req.user.id);
-
-    res.json({
-      success: true,
+    
+    res.json({ 
+      success: true, 
       accounts,
       count: accounts.length
     });
@@ -220,11 +206,11 @@ router.get('/accounts', authenticateToken, async (req, res) => {
 router.get('/locations/:accountId', authenticateToken, async (req, res) => {
   try {
     const account = await GHLAccount.findById(req.params.accountId);
-
+    
     if (!account || account.user_id !== req.user.id) {
-      return res.status(404).json({
-        success: false,
-        error: 'GHL account not found'
+      return res.status(404).json({ 
+        success: false, 
+        error: 'GHL account not found' 
       });
     }
 
@@ -246,9 +232,9 @@ router.get('/locations/:accountId', authenticateToken, async (req, res) => {
     }
 
     const locations = await getGHLLocations(account.access_token);
-
-    res.json({
-      success: true,
+    
+    res.json({ 
+      success: true, 
       locations,
       current_location: {
         id: account.location_id,
@@ -265,39 +251,39 @@ router.get('/locations/:accountId', authenticateToken, async (req, res) => {
 router.put('/accounts/:accountId/location', authenticateToken, async (req, res) => {
   try {
     const { location_id } = req.body;
-
+    
     if (!location_id) {
-      return res.status(400).json({
-        success: false,
-        error: 'Location ID is required'
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Location ID is required' 
       });
     }
 
     const account = await GHLAccount.findById(req.params.accountId);
-
+    
     if (!account || account.user_id !== req.user.id) {
-      return res.status(404).json({
-        success: false,
-        error: 'GHL account not found'
+      return res.status(404).json({ 
+        success: false, 
+        error: 'GHL account not found' 
       });
     }
 
     // Get location name
     const locations = await getGHLLocations(account.access_token);
     const selectedLocation = locations.find(loc => loc.id === location_id);
-
+    
     if (!selectedLocation) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid location ID'
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid location ID' 
       });
     }
 
     // Update location
     await GHLAccount.updateLocation(account.id, location_id, selectedLocation.name);
-
-    res.json({
-      success: true,
+    
+    res.json({ 
+      success: true, 
       message: 'Location updated successfully',
       location: {
         id: location_id,
@@ -314,18 +300,18 @@ router.put('/accounts/:accountId/location', authenticateToken, async (req, res) 
 router.post('/test-connection/:accountId', authenticateToken, async (req, res) => {
   try {
     const account = await GHLAccount.findById(req.params.accountId);
-
+    
     if (!account || account.user_id !== req.user.id) {
-      return res.status(404).json({
-        success: false,
-        error: 'GHL account not found'
+      return res.status(404).json({ 
+        success: false, 
+        error: 'GHL account not found' 
       });
     }
 
     const testResult = await testGHLConnection(account.access_token, account.location_id);
-
-    res.json({
-      success: testResult.success,
+    
+    res.json({ 
+      success: testResult.success, 
       message: testResult.message,
       error: testResult.error,
       userInfo: testResult.userInfo
@@ -340,11 +326,11 @@ router.post('/test-connection/:accountId', authenticateToken, async (req, res) =
 router.post('/refresh-token/:accountId', authenticateToken, async (req, res) => {
   try {
     const account = await GHLAccount.findById(req.params.accountId);
-
+    
     if (!account || account.user_id !== req.user.id) {
-      return res.status(404).json({
-        success: false,
-        error: 'GHL account not found'
+      return res.status(404).json({ 
+        success: false, 
+        error: 'GHL account not found' 
       });
     }
 
@@ -353,16 +339,16 @@ router.post('/refresh-token/:accountId', authenticateToken, async (req, res) => 
     const newTokenData = await refreshGHLToken(account.refresh_token);
     await GHLAccount.updateToken(account.id, newTokenData);
 
-    res.json({
-      success: true,
+    res.json({ 
+      success: true, 
       message: 'GHL token refreshed successfully',
       expires_in: newTokenData.expires_in
     });
-
+    
   } catch (error) {
     console.error('GHL token refresh error:', error);
-    res.status(500).json({
-      success: false,
+    res.status(500).json({ 
+      success: false, 
       error: error.message,
       needs_reconnect: true
     });
@@ -373,17 +359,17 @@ router.post('/refresh-token/:accountId', authenticateToken, async (req, res) => 
 router.delete('/accounts/:accountId', authenticateToken, async (req, res) => {
   try {
     const removed = await GHLAccount.remove(req.params.accountId, req.user.id);
-
+    
     if (!removed) {
-      return res.status(404).json({
-        success: false,
-        error: 'GHL account not found'
+      return res.status(404).json({ 
+        success: false, 
+        error: 'GHL account not found' 
       });
     }
-
-    res.json({
-      success: true,
-      message: 'GHL account removed successfully'
+    
+    res.json({ 
+      success: true, 
+      message: 'GHL account removed successfully' 
     });
   } catch (error) {
     console.error('Remove GHL account error:', error);
