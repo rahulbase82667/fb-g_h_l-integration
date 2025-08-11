@@ -24,7 +24,7 @@ router.get('/auth-url', authenticateToken, (req, res) => {
       `response_type=code` +
       `&client_id=${process.env.GHL_CLIENT_ID}` +
       `&redirect_uri=${encodeURIComponent(process.env.GHL_REDIRECT_URI+`?state=${state}`)}` +
-      `&scope=${encodeURIComponent(scope)}` 
+      `&scope=${encodeURIComponent(scope)}` +
       `&state=${state}`;    
     
     res.json({ 
