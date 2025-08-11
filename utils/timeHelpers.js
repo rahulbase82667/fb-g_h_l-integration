@@ -58,11 +58,15 @@ export const timeHelpers = {
     };
   }
 };
-
+export default function isExpired(mysqlTimestampMs) {
+  const now = Date.now(); // current time in ms
+  const thirtyMinutesMs = 30 * 60 * 1000; // 30 min in ms
+  return (now - mysqlTimestampMs) > thirtyMinutesMs;
+}
 // Example usage in your routes:
 /*
 import { timeHelpers } from '../utils/timeHelpers.js';
-
+    
 // In your callback route:
 const debugInfo = timeHelpers.debugTimestamp(req.session.authTimestamp);
 console.log('Session debug:', debugInfo);
