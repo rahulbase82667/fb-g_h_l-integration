@@ -113,7 +113,8 @@ router.get('/callback', async (req, res) => {
     }
 
     // Get user ID from session
-    const userId =await GHLAccount.findSessionWithSessionId(req.sessionID);
+    const getuserId =await GHLAccount.findSessionWithSessionId(req.sessionID);
+    const userId=getuserId.userId;
     // const userId = req.session.userId;
     if (!userId) {
       return res.status(400).json({
@@ -122,7 +123,7 @@ router.get('/callback', async (req, res) => {
         needs_restart: true
       });
     }
-
+    console.log('User ID from session:', userId);
     // Check session age (prevent stale sessions)
     const sessionAge = Date.now() - req.session.authTimestamp;
     console.log(sessionAge);
