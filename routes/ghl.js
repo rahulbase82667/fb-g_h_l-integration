@@ -3,6 +3,8 @@ import express from 'express';
 import session from 'express-session';
 import MySQLStore from 'express-mysql-session';
 import { authenticateToken } from '../middleware/auth.js';
+import { timeHelpers } from '../utils/timeHelpers.js';
+
 import { 
   exchangeCodeForToken, 
   getGHLUserInfo, 
@@ -73,7 +75,7 @@ router.get('/auth-url', authenticateToken, (req, res) => {
     
     // Store user ID in session for later use
     req.session.userId = req.user.id;
-    req.session.authTimestamp = Date.now();
+    req.session.authTimestamp = Date.now(); 
     
     console.log('Starting GHL OAuth for user:', req.user.id);
     
@@ -122,7 +124,11 @@ router.get('/callback', async (req, res) => {
 
     // Check session age (prevent stale sessions)
     const sessionAge = Date.now() - (req.session.authTimestamp || 0);
-    if (sessionAge > 1800000) { // 30 minutes
+    // if (sessionAge > 1800000) { // 30 minutes
+    const debugInfo = timeHelpers.debugTimestamp(req.session.authTimestamp);
+console.log('Session debug:', debugInfo);
+if (timeHelpers.isSessionExpired(req.session.authTimestamp)) {
+
       req.session.destroy();
       return res.status(400).json({
         success: false,
