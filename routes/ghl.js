@@ -18,7 +18,7 @@ import { GHLAccount } from '../models/GHLAccount.js';
 import pool from '../config/database.js';
 
 const router = express.Router();
-const tempUserId="";
+let tempUserId="";
 // Session store configuration for production
 const MySQLStoreClass = MySQLStore(session);
 const sessionStore = new MySQLStoreClass({
