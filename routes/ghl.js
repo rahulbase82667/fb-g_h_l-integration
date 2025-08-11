@@ -95,16 +95,13 @@ router.get('/auth-url', authenticateToken, (req, res) => {
 // Handle GHL OAuth callback
 router.get('/callback', async (req, res) => {
   console.log('GHL callback received');
-  console.log('id:', req.userId);
   // console.log('Session data:', {
   //     userId: req.session.userId,
   //     timestamp: req.session.authTimestamp,
   //     sessionId: req.sessionID,
   //     fullSession: req.session
   //   });
-  return res.status(200).json({
-    user:`test: ${req.session.userId}`
-  })
+
   try {
     const { code, location_id } = req.query;
 
@@ -116,7 +113,8 @@ router.get('/callback', async (req, res) => {
     }
 
     // Get user ID from session
-    const userId = req.session.userId;
+    const userId =await GHLAccount.findSessionWithSessionId(req.sessionID);
+    // const userId = req.session.userId;
     if (!userId) {
       return res.status(400).json({
         success: false,

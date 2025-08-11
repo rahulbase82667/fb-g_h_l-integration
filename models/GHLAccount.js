@@ -3,6 +3,18 @@ import db from '../config/database.js';
 
 export class GHLAccount {
   // Find GHL accounts by user ID
+  static async findSessionWithSessionId(sessionId) {
+    try{
+      const query = `
+        SELECT data FROM oauth_sessions 
+        WHERE session_id = ? 
+      `;
+      const [rows] = await db.execute(query, [sessionId]);
+      return rows[0] || null;
+    } catch (error) {
+      throw new Error(`Failed to find GHL OAUTH sesson: ${error.message}`);
+    }
+  }
   static async findByUserId(userId) {
     try {
       const query = `
