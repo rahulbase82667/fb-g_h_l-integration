@@ -124,10 +124,11 @@ router.get('/callback', async (req, res) => {
 
     // Check session age (prevent stale sessions)
     const sessionAge = Date.now() - (req.session.authTimestamp || 0);
-    // if (sessionAge > 1800000) { // 30 minutes
+    console.log(sessionAge);
+    if (sessionAge > 1800000) { // 30 minutes
     // const debugInfo = timeHelpers.debugTimestamp(req.session.authTimestamp);
     // console.log('Session debug:', debugInfo);
-    if (isExpired(req.session.authTimestamp)) {
+    // if (isExpired(req.session.authTimestamp)) {
       req.session.destroy();
       return res.status(400).json({
         success: false,
