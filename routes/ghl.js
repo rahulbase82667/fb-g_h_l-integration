@@ -18,7 +18,7 @@ import { GHLAccount } from '../models/GHLAccount.js';
 import pool from '../config/database.js';
 
 const router = express.Router();
-let tempUserId="";
+
 // Session store configuration for production
 const MySQLStoreClass = MySQLStore(session);
 const sessionStore = new MySQLStoreClass({
@@ -52,13 +52,12 @@ const oauthSessionMiddleware = session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 1800000, // 30 minutes,
-    userId:tempUserId
+    maxAge: 1800000 // 30 minutes
   }
 });
 
 // --- Apply it only to /auth-url and /callback ---
-router.use(['/auth-url', '/callback'], oauthSessionMiddleware);
+router.use(oauthSessionMiddleware);
 
 
 // Generate GHL OAuth URL
@@ -67,7 +66,6 @@ router.get('/auth-url', authenticateToken, (req, res) => {
     const scope = 'locations/read contacts/write contacts/read conversations/write conversations/read';
 
     // Store user ID in session for later use
-   tempUserId=req.user.id;
     req.session.userId = req.user.id;
     req.session.authTimestamp = Date.now();
     
