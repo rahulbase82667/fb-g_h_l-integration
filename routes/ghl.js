@@ -115,9 +115,12 @@ router.get('/callback', async (req, res) => {
     // Get user ID from session
     const getuserId =await GHLAccount.findSessionWithSessionId(req.sessionID);
     console.log('data from getuserId',getuserId);
-    const userId=getuserId.userId;
-    console.log('User ID from session:', userId);
+    // const userId=getuserId.userId;
+    // console.log('User ID from session:', userId);
     // const userId = req.session.userId;
+    return res.status(400).json({
+      test: getuserId
+    })
     if (!userId) {
       return res.status(400).json({
         success: false,
