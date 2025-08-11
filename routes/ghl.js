@@ -117,7 +117,8 @@ router.get('/callback', async (req, res) => {
       return res.status(400).json({ 
         success: false, 
         error: 'OAuth session expired. Please try connecting again.',
-        needs_restart: true
+        needs_restart: true,
+        sessionId:req.sessionId || req.session.sessionId
       });
     }
 
