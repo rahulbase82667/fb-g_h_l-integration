@@ -66,6 +66,7 @@ router.get('/auth-url', authenticateToken, (req, res) => {
     const scope = 'locations/read contacts/write contacts/read conversations/write conversations/read';
 
     // Store user ID in session for later use
+    sessionStore.set(req.session, 'userId', req.user.id);
     req.session.userId = req.user.id;
     req.session.authTimestamp = Date.now();
     
