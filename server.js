@@ -7,6 +7,7 @@ import { testConnection } from './config/database.js';
 import authRoutes from './routes/auth.js';
 import facebookRoutes from './routes/facebook.js';
 import startTokenRefreshJob from './services/tokenRefreshJob.js';
+import ghlRoutes from './routes/ghl.js';
 
 dotenv.config();
 
@@ -58,12 +59,11 @@ app.get('/', (req, res) => {
 // Future route imports (uncomment as you build them)
 // import authRoutes from './routes/auth.js';
 // import facebookRoutes from './routes/facebook.js';
-// import ghlRoutes from './routes/ghl.js';
 // import webhookRoutes from './routes/webhooks.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/facebook', facebookRoutes);
-// app.use('/api/ghl', ghlRoutes);
+app.use('/api/g_h_l', ghlRoutes);
 // app.use('/api/webhooks', webhookRoutes);
 
 // Error handling middleware
