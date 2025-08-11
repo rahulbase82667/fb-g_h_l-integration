@@ -41,11 +41,10 @@ const sessionStore = new MySQLStoreClass({
   }
 });
 
-// Session middleware for OAuth flows
-// --- Create a single OAuth session middleware ---
+// Create OAuth session middleware
 const oauthSessionMiddleware = session({
   key: 'ghl_oauth_session',
-  secret:  process.env.JWT_SECRET,
+  secret: process.env.JWT_SECRET,
   store: sessionStore,
   resave: false,
   saveUninitialized: false,
@@ -95,9 +94,14 @@ router.get('/auth-url', authenticateToken, (req, res) => {
 // Handle GHL OAuth callback
 router.get('/callback', async (req, res) => {
   console.log('GHL callback received');
-  console.log('session data',req.session)
+  console.log('Session data:', {
+      userId: req.session.userId,
+      timestamp: req.session.authTimestamp,
+      sessionId: req.sessionID,
+      fullSession: req.session
+    });
   return res.status(200).json({
-    user:req.session.userId
+    user:`test: ${req.session.userId}`
   })
   try {
     const { code, location_id } = req.query;
