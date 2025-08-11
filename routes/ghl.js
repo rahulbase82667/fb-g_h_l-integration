@@ -42,7 +42,7 @@ const sessionStore = new MySQLStoreClass({
 // Session middleware for OAuth flows
 router.use('/auth-url', session({
   key: 'ghl_oauth_session',
-  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
+  secret:  process.env.JWT_SECRET,
   store: sessionStore,
   resave: false,
   saveUninitialized: false,
@@ -112,13 +112,14 @@ router.get('/callback', async (req, res) => {
 
     // Get user ID from session
     // let getSessonData=await GHLAccount.findSessionWithSessionId();
+    console.log(`sessionID:${req.sessionID || req.session.sessionID}`);
     const userId = req.session.userId;
     if (!userId) {
       return res.status(400).json({ 
         success: false, 
         error: 'OAuth session expired. Please try connecting again.',
         needs_restart: true,
-        sessionId:req.sessionId || req.session.sessionId
+        sessionId:req.sessionID || req.session.sessionID
       });
     }
 
