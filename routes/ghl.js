@@ -13,7 +13,7 @@ import {
   validateGHLToken
 } from '../services/ghlAuth.js';
 import { GHLAccount } from '../models/GHLAccount.js';
-import { pool } from '../config/database.js';
+import pool  from '../config/database.js';
 
 const router = express.Router();
 
@@ -111,6 +111,7 @@ router.get('/callback', async (req, res) => {
     }
 
     // Get user ID from session
+    // let getSessonData=await GHLAccount.findSessionWithSessionId();
     const userId = req.session.userId;
     if (!userId) {
       return res.status(400).json({ 
