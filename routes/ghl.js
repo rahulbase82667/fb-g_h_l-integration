@@ -1,5 +1,7 @@
 // routes/ghl.js
 import express from 'express';
+import session from 'express-session';
+import MySQLStore from 'express-mysql-session';
 import { authenticateToken } from '../middleware/auth.js';
 import { 
   exchangeCodeForToken, 
@@ -11,26 +13,84 @@ import {
   validateGHLToken
 } from '../services/ghlAuth.js';
 import { GHLAccount } from '../models/GHLAccount.js';
+import { pool } from '../config/database.js';
 
 const router = express.Router();
+
+// Session store configuration for production
+const MySQLStoreClass = MySQLStore(session);
+const sessionStore = new MySQLStoreClass({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  clearExpired: true,
+  checkExpirationInterval: 900000, // 15 minutes
+  expiration: 1800000, // 30 minutes (for OAuth only)
+  createDatabaseTable: false, // We created table manually
+  schema: {
+    tableName: 'oauth_sessions',
+    columnNames: {
+      session_id: 'session_id',
+      expires: 'expires',
+      data: 'data'
+    }
+  }
+});
+
+// Session middleware for OAuth flows
+router.use('/auth-url', session({
+  key: 'ghl_oauth_session',
+  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
+  store: sessionStore,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 1800000 // 30 minutes
+  }
+}));
+
+router.use('/callback', session({
+  key: 'ghl_oauth_session',
+  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
+  store: sessionStore,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 1800000 // 30 minutes
+  }
+}));
 
 // Generate GHL OAuth URL
 router.get('/auth-url', authenticateToken, (req, res) => {
   try {
     const scope = 'locations/read contacts/write contacts/read conversations/write conversations/read';
-    const state = req.user.id; // Use user ID as state for security
+    
+    // Store user ID in session for later use
+    req.session.userId = req.user.id;
+    req.session.authTimestamp = Date.now();
+    
+    console.log('Starting GHL OAuth for user:', req.user.id);
     
     const authUrl = `https://marketplace.gohighlevel.com/oauth/chooselocation?` +
       `response_type=code` +
       `&client_id=${process.env.GHL_CLIENT_ID}` +
-      `&redirect_uri=${encodeURIComponent(process.env.GHL_REDIRECT_URI+`?state=${state}`)}` +
-      `&scope=${encodeURIComponent(scope)}` +
-      `&state=${state}`;    
+      `&redirect_uri=${encodeURIComponent(process.env.GHL_REDIRECT_URI)}` +
+      `&scope=${encodeURIComponent(scope)}`;
     
     res.json({ 
       success: true, 
       authUrl,  
-      message: 'Click the URL to connect your GHL account'
+      message: 'Click the URL to connect your GHL account',
+      sessionInfo: {
+        userId: req.session.userId,
+        timestamp: req.session.authTimestamp
+      }
     });
   } catch (error) {
     console.error('GHL auth URL error:', error);
@@ -41,23 +101,38 @@ router.get('/auth-url', authenticateToken, (req, res) => {
 // Handle GHL OAuth callback
 router.get('/callback', async (req, res) => {
   try {
-    const { code, state: userId, location_id } = req.query;
+    const { code, location_id } = req.query;
     
     if (!code) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Authorization code missing' 
+        error: 'Authorization code missing from GHL callback' 
       });
     }
 
+    // Get user ID from session
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(400).json({ 
         success: false, 
-        error: 'User state missing' 
+        error: 'OAuth session expired. Please try connecting again.',
+        needs_restart: true
+      });
+    }
+
+    // Check session age (prevent stale sessions)
+    const sessionAge = Date.now() - (req.session.authTimestamp || 0);
+    if (sessionAge > 1800000) { // 30 minutes
+      req.session.destroy();
+      return res.status(400).json({
+        success: false,
+        error: 'OAuth session expired. Please start the connection process again.',
+        needs_restart: true
       });
     }
 
     console.log('Processing GHL OAuth callback for user:', userId);
+    console.log('Authorization code received, location_id:', location_id);
 
     // Exchange code for tokens
     const tokenData = await exchangeCodeForToken(code);
@@ -74,6 +149,12 @@ router.get('/callback', async (req, res) => {
     // Test connection
     const connectionTest = await testGHLConnection(tokenData.access_token, location_id);
 
+    // Clear the OAuth session after successful connection
+    req.session.destroy((err) => {
+      if (err) console.error('Session destroy error:', err);
+    });
+
+    // Return success response
     res.json({ 
       success: true, 
       message: 'GHL account connected successfully',
@@ -82,15 +163,25 @@ router.get('/callback', async (req, res) => {
         ghl_user_id: userInfo.id,
         email: userInfo.email,
         location_id: location_id,
+        location_name: userInfo.companyName || 'Not specified',
         connection_test: connectionTest
       }
     });
     
   } catch (error) {
     console.error('GHL callback error:', error);
+    
+    // Clear session on error
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) console.error('Session destroy error:', err);
+      });
+    }
+
     res.status(500).json({ 
       success: false, 
-      error: error.message 
+      error: error.message,
+      suggestion: 'Please try connecting your GHL account again.'
     });
   }
 });
