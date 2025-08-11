@@ -10,6 +10,7 @@ export class GHLAccount {
         WHERE session_id = ? 
       `;
       const [rows] = await db.execute(query, [sessionId]);
+      console.log('data from findSessionWithSessionId',rows);
       return rows[0] || null;
     } catch (error) {
       throw new Error(`Failed to find GHL OAUTH sesson: ${error.message}`);
