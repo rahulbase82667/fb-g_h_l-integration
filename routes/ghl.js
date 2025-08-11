@@ -95,7 +95,7 @@ router.get('/auth-url', authenticateToken, (req, res) => {
 // Handle GHL OAuth callback
 router.get('/callback', async (req, res) => {
   console.log('GHL callback received');
-  console.log('session data',req,session)
+  console.log('session data',req.session)
   return res.status(200).json({
     user:req.session.userId
   })
