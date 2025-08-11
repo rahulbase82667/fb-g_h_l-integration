@@ -53,8 +53,9 @@ const oauthSessionMiddleware = session({
   }
 });
 // APPLY THE SAME MIDDLEWARE TO BOTH ROUTES
-router.use('/auth-url', oauthSessionMiddleware);
-router.use('/callback', oauthSessionMiddleware);
+// router.use('/auth-url', oauthSessionMiddleware);
+// router.use('/callback', oauthSessionMiddleware);
+router.use(oauthSessionMiddleware);
 
 // Generate GHL OAuth URL
 router.get('/auth-url', authenticateToken, (req, res) => {
