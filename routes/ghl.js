@@ -1,7 +1,5 @@
 // routes/ghl.js
 import express from 'express';
-import session from 'express-session';
-import MySQLStore from 'express-mysql-session';
 import { authenticateToken } from '../middleware/auth.js';
 import {
   exchangeCodeForToken,
@@ -13,95 +11,31 @@ import {
   validateGHLToken
 } from '../services/ghlAuth.js';
 import { GHLAccount } from '../models/GHLAccount.js';
-import pool from '../config/database.js';
+
 
 const router = express.Router();
 
-// Session store configuration for production
-const MySQLStoreClass = MySQLStore(session);
-const sessionStore = new MySQLStoreClass({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  clearExpired: true,
-  checkExpirationInterval: 900000, // 15 minutes
-  expiration: 1800000, // 30 minutes (for OAuth only)
-  createDatabaseTable: false, // We created table manually
-  schema: {
-    tableName: 'oauth_sessions',
-    columnNames: {
-      session_id: 'session_id',
-      expires: 'expires',
-      data: 'data'
-    }
-  }
-});
 
-const oauthSessionMiddleware = session({
-  key: 'ghl_oauth_session',
-  secret: process.env.JWT_SECRET,  // Use same secret
-  store: sessionStore,
-  resave: false,
-  saveUninitialized: true, // Important: save empty sessions
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 1800000, // 30 minutes
-    sameSite: 'lax' // Help with cross-domain cookies
-  }
-});
-// APPLY THE SAME MIDDLEWARE TO BOTH ROUTES
-// router.use('/auth-url', oauthSessionMiddleware);
-// router.use('/callback', oauthSessionMiddleware);
-router.use(oauthSessionMiddleware);
+
+
 global.userId = null;
 // Generate GHL OAuth URL
 router.get('/auth-url', authenticateToken, (req, res) => {
   try {
-    const url=`https://fb-g-h-l-integration.onrender.com/api/g_h_l/callback?state=${req.user.id}`
     const scope = 'locations/read contacts/write contacts/read conversations/write conversations/read';
-    console.log('=== AUTH-URL SESSION DEBUG ===');
-    console.log('Session ID:', req.sessionID);
-    console.log('Session before:', req.session);
-    // Store user ID in session for later use
-    req.session.userId = req.user.id;
-    req.session.authTimestamp = Date.now();
     global.userId=req.user.id;
-
-    // FORCE SAVE THE SESSION
-    req.session.save((err) => {
-      if (err) {
-        console.error('Session save error:', err);
-        return res.status(500).json({
-          success: false,
-          error: 'Failed to save session'
-        });
-      }
-
-      console.log('✅ Session saved successfully');
-      console.log('Final Session ID:', req.sessionID);
-
       const authUrl = `https://marketplace.gohighlevel.com/oauth/chooselocation?` +
         `response_type=code` +
         `&client_id=${process.env.GHL_CLIENT_ID}` +
-        `&redirect_uri=${encodeURIComponent(url)}` +
-        // `&redirect_uri=${encodeURIComponent(process.env.GHL_REDIRECT_URI)}` +
+        `&redirect_uri=${encodeURIComponent(process.env.GHL_REDIRECT_URI)}` +
         `&scope=${encodeURIComponent(scope)}`;
 
       res.json({
         success: true,
         authUrl,
         message: 'Click the URL to connect your GHL account',
-        debug: {
-          sessionId: req.sessionID,
-          userId: req.session.userId,
-          timestamp: req.session.authTimestamp,
-          savedToDatabase: true
-        }
       });
-    });
+    
   } catch (error) {
     console.error('GHL auth URL error:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -111,10 +45,7 @@ router.get('/auth-url', authenticateToken, (req, res) => {
 // Handle GHL OAuth callback
 router.get('/callback', async (req, res) => {
   try {
-    console.log('testing herer::',global.userId);
-    console.log('=== CALLBACK SESSION DEBUG ===');
-    console.log('Session ID:', req.sessionID);
-    console.log('Session data:', req.session);
+    console.log('testing here::',global.userId)
     console.log('Query params:', req.query);
     const { code, location_id } = req.query;
 
@@ -125,47 +56,19 @@ router.get('/callback', async (req, res) => {
       });
     }
 
-    // Get user ID from session
-    const userId = req.session.userId;
-    console.log('User ID from session:', userId);
+
+    const userId = global.userId;
+   
 
     if (!userId) {
-      // Try to manually check database for debugging
-      console.log('❌ No userId in session, checking database...');
-
       return res.status(400).json({
         success: false,
         error: 'OAuth session expired or user ID missing. Please try connecting again.',
         needs_restart: true,
-        userId:global.userId,
-        debug: {
-          sessionId: req.sessionID,
-          sessionExists: !!req.session,
-          sessionKeys: Object.keys(req.session || {}),
-          sessionData: req.session
-        }
+        userId:global.userId
       });
     }
-    // if (!userId) {
-    //   return res.status(400).json({ 
-    //     success: false, 
-    //     error: 'OAuth session expired. Please try connecting again.',
-    //     needs_restart: true,
-    //     sessionId:req.sessionID || req.session.sessionID
-    //   });
-    // }
 
-    // Check session age (prevent stale sessions)
-    const sessionAge = Date.now() - (req.session.authTimestamp || 0);
-    console.log('Session age:', sessionAge, 'ms (', Math.round(sessionAge / 60000), 'minutes)');
-    if (sessionAge > 1800000) { // 30 minutes
-      req.session.destroy();
-      return res.status(400).json({
-        success: false,
-        error: 'OAuth session expired. Please start the connection process again.',
-        needs_restart: true
-      });
-    }
 
     console.log('Processing GHL OAuth callback for user:', userId);
     console.log('Authorization code received, location_id:', location_id);
@@ -185,10 +88,7 @@ router.get('/callback', async (req, res) => {
     // Test connection
     const connectionTest = await testGHLConnection(tokenData.access_token, location_id);
 
-    // Clear the OAuth session after successful connection
-    req.session.destroy((err) => {
-      if (err) console.error('Session destroy error:', err);
-    });
+
 
     // Return success response
     res.json({
@@ -207,12 +107,6 @@ router.get('/callback', async (req, res) => {
   } catch (error) {
     console.error('GHL callback error:', error);
 
-    // Clear session on error
-    if (req.session) {
-      req.session.destroy((err) => {
-        if (err) console.error('Session destroy error:', err);
-      });
-    }
 
     res.status(500).json({
       success: false,
