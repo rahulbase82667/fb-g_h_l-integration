@@ -32,11 +32,12 @@ export const exchangeCodeForToken = async (code) => {
     params.append('client_id', process.env.GHL_CLIENT_ID);
     params.append('client_secret', process.env.GHL_CLIENT_SECRET);
     params.append('grant_type', 'authorization_code');
+    params.append('user_type', 'company');
     params.append('code', code);
     params.append('redirect_uri', process.env.GHL_REDIRECT_URI);
 
     const response = await axios.post(
-      `${GHL_API_BASE}/token`,
+      `${GHL_API_BASE}/oauth/token`,
       params.toString(), // Send as a form-encoded string
       {
         headers: {
