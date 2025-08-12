@@ -32,7 +32,7 @@ export const exchangeCodeForToken = async (code) => {
     params.append('client_id', process.env.GHL_CLIENT_ID);
     params.append('client_secret', process.env.GHL_CLIENT_SECRET);
     params.append('grant_type', 'authorization_code');
-    params.append('user_type', 'company');
+    params.append('user_type', 'Company');
     params.append('code', code);
     params.append('redirect_uri', process.env.GHL_REDIRECT_URI);
 
