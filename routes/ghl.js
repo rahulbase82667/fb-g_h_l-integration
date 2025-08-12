@@ -56,7 +56,7 @@ const oauthSessionMiddleware = session({
 // router.use('/auth-url', oauthSessionMiddleware);
 // router.use('/callback', oauthSessionMiddleware);
 router.use(oauthSessionMiddleware);
-
+global.userId = null;
 // Generate GHL OAuth URL
 router.get('/auth-url', authenticateToken, (req, res) => {
   try {
@@ -67,7 +67,7 @@ router.get('/auth-url', authenticateToken, (req, res) => {
     // Store user ID in session for later use
     req.session.userId = req.user.id;
     req.session.authTimestamp = Date.now();
-
+    global.userId=req.user.id;
 
     // FORCE SAVE THE SESSION
     req.session.save((err) => {
@@ -81,11 +81,11 @@ router.get('/auth-url', authenticateToken, (req, res) => {
 
       console.log('✅ Session saved successfully');
       console.log('Final Session ID:', req.sessionID);
-      const uri='https://fb-g-h-l-integration.onrender.com/api/g_h_l/callback/state?state='+req.user.id;
+
       const authUrl = `https://marketplace.gohighlevel.com/oauth/chooselocation?` +
         `response_type=code` +
         `&client_id=${process.env.GHL_CLIENT_ID}` +
-        `&redirect_uri=${encodeURIComponent(uri)}` +
+        `&redirect_uri=${encodeURIComponent(process.env.GHL_REDIRECT_URI)}` +
         `&scope=${encodeURIComponent(scope)}`;
 
       res.json({
@@ -109,6 +109,7 @@ router.get('/auth-url', authenticateToken, (req, res) => {
 // Handle GHL OAuth callback
 router.get('/callback', async (req, res) => {
   try {
+    console.log('testing herer::',global.userId);
     console.log('=== CALLBACK SESSION DEBUG ===');
     console.log('Session ID:', req.sessionID);
     console.log('Session data:', req.session);
@@ -134,6 +135,7 @@ router.get('/callback', async (req, res) => {
         success: false,
         error: 'OAuth session expired or user ID missing. Please try connecting again.',
         needs_restart: true,
+        userId:global.userId,
         debug: {
           sessionId: req.sessionID,
           sessionExists: !!req.session,
