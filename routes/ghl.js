@@ -60,6 +60,7 @@ global.userId = null;
 // Generate GHL OAuth URL
 router.get('/auth-url', authenticateToken, (req, res) => {
   try {
+    const url=`https://fb-g-h-l-integration.onrender.com/api/g_h_l/callback?state=${req.user.id}`
     const scope = 'locations/read contacts/write contacts/read conversations/write conversations/read';
     console.log('=== AUTH-URL SESSION DEBUG ===');
     console.log('Session ID:', req.sessionID);
