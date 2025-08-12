@@ -6,23 +6,48 @@ const GHL_API_BASE = 'https://services.leadconnectorhq.com';
 const GHL_OAUTH_BASE = 'https://marketplace.gohighlevel.com/oauth';
 
 // Exchange authorization code for access token
+// export const exchangeCodeForToken = async (code) => {
+//   try {
+//     const response = await axios.post(`${GHL_OAUTH_BASE}/token`,JSON.stringify({
+//       client_id: process.env.GHL_CLIENT_ID,
+//       client_secret: process.env.GHL_CLIENT_SECRET,
+//       grant_type: 'authorization_code',
+//       code: code,
+//       redirect_uri: process.env.GHL_REDIRECT_URI
+//     }), {
+//       headers: {
+//         'Content-Type': 'application/x-www-form-urlencoded'
+//       }
+//     });
+
+//     return response.data;
+//   } catch (error) {
+//     console.error('GHL token exchange error:', error.response?.data);
+//     throw new Error(`GHL token exchange failed: ${error.response?.data?.error || error.message}`);
+//   }
+// };
 export const exchangeCodeForToken = async (code) => {
   try {
-    const response = await axios.post(`${GHL_OAUTH_BASE}/token`,JSON.stringify({
-      client_id: process.env.GHL_CLIENT_ID,
-      client_secret: process.env.GHL_CLIENT_SECRET,
-      grant_type: 'authorization_code',
-      code: code,
-      redirect_uri: process.env.GHL_REDIRECT_URI
-    }), {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+    const params = new URLSearchParams();
+    params.append('client_id', process.env.GHL_CLIENT_ID);
+    params.append('client_secret', process.env.GHL_CLIENT_SECRET);
+    params.append('grant_type', 'authorization_code');
+    params.append('code', code);
+    params.append('redirect_uri', process.env.GHL_REDIRECT_URI);
+
+    const response = await axios.post(
+      `${GHL_OAUTH_BASE}/token`,
+      params.toString(), // Send as a form-encoded string
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
       }
-    });
+    );
 
     return response.data;
   } catch (error) {
-    console.error('GHL token exchange error:', error.response?.data);
+    console.error('GHL token exchange error:', error.response?.data || error.message);
     throw new Error(`GHL token exchange failed: ${error.response?.data?.error || error.message}`);
   }
 };
