@@ -60,7 +60,7 @@ export const getGHLUserInfo = async (accessToken) => {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Version': '2021-07-28'
-      }
+      } 
     });
 
     return response.data;
