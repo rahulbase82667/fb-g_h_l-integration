@@ -81,11 +81,11 @@ router.get('/auth-url', authenticateToken, (req, res) => {
 
       console.log('✅ Session saved successfully');
       console.log('Final Session ID:', req.sessionID);
-
+      const uri='https://fb-g-h-l-integration.onrender.com/api/g_h_l/callback/state?state='+req.user.id;
       const authUrl = `https://marketplace.gohighlevel.com/oauth/chooselocation?` +
         `response_type=code` +
         `&client_id=${process.env.GHL_CLIENT_ID}` +
-        `&redirect_uri=${encodeURIComponent(process.env.GHL_REDIRECT_URI)}` +
+        `&redirect_uri=${encodeURIComponent(uri)}` +
         `&scope=${encodeURIComponent(scope)}`;
 
       res.json({
