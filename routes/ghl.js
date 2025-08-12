@@ -22,13 +22,16 @@ global.userId = null;
 // Generate GHL OAuth URL
 router.get('/auth-url', authenticateToken, (req, res) => {
   try {
+    // useful
+    // &loginWindowOpenMode=self
     const scope = 'locations/read contacts/write contacts/read conversations/write conversations/read';
     global.userId=req.user.id;
       const authUrl = `https://marketplace.gohighlevel.com/oauth/chooselocation?` +
         `response_type=code` +
         `&client_id=${process.env.GHL_CLIENT_ID}` +
         `&redirect_uri=${encodeURIComponent(process.env.GHL_REDIRECT_URI)}` +
-        `&scope=${encodeURIComponent(scope)}`;
+        `&scope=${encodeURIComponent(scope)}`+
+        `&loginWindowOpenMode=self`;
 
       res.json({
         success: true,
@@ -75,11 +78,13 @@ router.get('/callback', async (req, res) => {
 
     // Exchange code for tokens
     const tokenData = await exchangeCodeForToken(code);
+    // console.log(tokenData);
     console.log('Token exchange successful');
+    console.log('User info retrieved:', tokenData.locationId);  
 
     // Get user info
-    const userInfo = await getGHLUserInfo(tokenData.access_token);
-    console.log('User info retrieved:', userInfo.email);
+    const userInfo = await getGHLUserInfo(tokenData.access_token,tokenData.locationId);
+    console.log('User info retrieved:', userInfo.email);  
 
     // Store GHL account
     const accountId = await storeGHLAccount(userId, tokenData, userInfo, location_id);
