@@ -36,7 +36,7 @@ export const exchangeCodeForToken = async (code) => {
     params.append('redirect_uri', process.env.GHL_REDIRECT_URI);
 
     const response = await axios.post(
-      `${GHL_OAUTH_BASE}/token`,
+      `${GHL_API_BASE}/token`,
       params.toString(), // Send as a form-encoded string
       {
         headers: {
