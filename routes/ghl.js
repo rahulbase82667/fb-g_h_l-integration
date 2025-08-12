@@ -92,7 +92,7 @@ router.get('/callback', async (req, res) => {
     console.log('GHL account stored with ID:', accountId);
 
     // Test connection
-    const connectionTest = await testGHLConnection(tokenData.access_token, location_id);
+    const connectionTest = await testGHLConnection(tokenData.access_token, userId);
 
 
 

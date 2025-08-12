@@ -90,12 +90,13 @@ export const getGHLLocations = async (accessToken) => {
 // Refresh GHL access token
 export const refreshGHLToken = async (refreshToken) => {
   try {
-    const response = await axios.post(`${GHL_OAUTH_BASE}/token`, {
-      client_id: process.env.GHL_CLIENT_ID,
-      client_secret: process.env.GHL_CLIENT_SECRET,
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken
-    }, {
+    const params = new URLSearchParams();
+    params.append('client_id', process.env.GHL_CLIENT_ID);
+    params.append('client_secret', process.env.GHL_CLIENT_SECRET);
+    params.append('grant_type', 'refresh_token');
+    params.append('refresh_token', refreshToken);
+
+    const response = await axios.post(`${GHL_API_BASE}/oauth/token`, params.toString(), {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       }
@@ -173,10 +174,10 @@ export const storeGHLAccount = async (userId, tokenData, userInfo, selectedLocat
 };
 
 // Test GHL API connection
-export const testGHLConnection = async (accessToken, locationId) => {
+export const testGHLConnection = async (accessToken, userId) => {
   try {
     // Test basic API access
-    const userInfo = await getGHLUserInfo(accessToken);
+    const userInfo = await getGHLUserInfo(accessToken,userId);
     
     // Test location-specific access if locationId provided
     if (locationId) {
