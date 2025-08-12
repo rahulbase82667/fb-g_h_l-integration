@@ -8,13 +8,13 @@ const GHL_OAUTH_BASE = 'https://marketplace.gohighlevel.com/oauth';
 // Exchange authorization code for access token
 export const exchangeCodeForToken = async (code) => {
   try {
-    const response = await axios.post(`${GHL_OAUTH_BASE}/token`, {
+    const response = await axios.post(`${GHL_OAUTH_BASE}/token`,JSON.stringify({
       client_id: process.env.GHL_CLIENT_ID,
       client_secret: process.env.GHL_CLIENT_SECRET,
       grant_type: 'authorization_code',
       code: code,
       redirect_uri: process.env.GHL_REDIRECT_URI
-    }, {
+    }), {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       }
