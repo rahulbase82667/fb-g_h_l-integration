@@ -54,9 +54,9 @@ export const exchangeCodeForToken = async (code) => {
 };
 
 // Get GHL user info and locations
-export const getGHLUserInfo = async (accessToken,locationId) => {
+export const getGHLUserInfo = async (accessToken,userId) => {
   try {
-    const response = await axios.get(`${GHL_API_BASE}/users/?locationId=${locationId}`, {
+    const response = await axios.get(`${GHL_API_BASE}/users/${userId}`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Version': '2021-07-28'

@@ -78,14 +78,13 @@ router.get('/callback', async (req, res) => {
 
     // Exchange code for tokens
     const tokenData = await exchangeCodeForToken(code);
-    return res.json(tokenData);
-    
+    // return res.json(tokenData);
+
     // console.log(tokenData);
     console.log('Token exchange successful');
-    console.log('User info retrieved:', tokenData.locationId);  
 
     // Get user info
-    const userInfo = await getGHLUserInfo(tokenData.access_token,tokenData.locationId);
+    const userInfo = await getGHLUserInfo(tokenData.access_token,tokenData.userId);
     console.log('User info retrieved:', userInfo.email);  
 
     // Store GHL account
