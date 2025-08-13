@@ -8,7 +8,7 @@ import authRoutes from './routes/auth.js';
 import facebookRoutes from './routes/facebook.js';
 import startTokenRefreshJob from './services/tokenRefreshJob.js';
 import ghlRoutes from './routes/ghl.js';
-import webhookRoutes from './routes/webhooks.js';
+import webhookRoutes from './routes/webhook.js';
 
 dotenv.config();
 
