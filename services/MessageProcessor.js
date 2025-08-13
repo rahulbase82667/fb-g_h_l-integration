@@ -1,5 +1,5 @@
 import { saveMessage, findMessageById } from '../models/Message.js';
-import { findFacebookAccountByFbId } from '../models/FacebookAccount.js';
+import { findByFacebookUserId } from '../models/FacebookAccount.js';
 
 /**
  * Verify webhook token from Facebook
@@ -36,7 +36,7 @@ export const processIncomingMessage = async (messagingEvent, pageId) => {
     }
 
     // Find the Facebook account associated with this page
-    const facebookAccount = await findFacebookAccountByFbId(recipient.id);
+    const facebookAccount = await findByFacebookUserId(recipient.id);
     if (!facebookAccount) {
       console.log(`⚠️ No Facebook account found for page ID: ${recipient.id}`);
       return;
