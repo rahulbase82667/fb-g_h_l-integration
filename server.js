@@ -76,7 +76,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/facebook', facebookRoutes);
 app.use('/api/g_h_l', ghlRoutes);
-app.use('/webhooks', webhookLimiter, webhookRoutes);
+app.use('/webhook', webhookLimiter, webhookRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

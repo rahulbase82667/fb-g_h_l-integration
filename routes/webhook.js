@@ -5,12 +5,13 @@ const router = express.Router();
 
 // Webhook verification endpoint (GET)
 router.get('/facebook', async (req, res) => {
+  console.log('going to verify webhook');
   try {
     const { 'hub.mode': mode, 'hub.verify_token': token, 'hub.challenge': challenge } = req.query;
     
     // Verify webhook token
     const isValid = await verifyWebhook(mode, token);
-      
+
     if (isValid) {
       console.log(' Facebook webhook verified successfully');
       return res.status(200).send(challenge);
