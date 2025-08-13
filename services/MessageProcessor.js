@@ -1,5 +1,5 @@
 import { saveMessage, findMessageById } from '../models/Message.js';
-import { findByFacebookUserId } from '../models/FacebookAccount.js';
+import findByFacebookUserId  from '../models/FacebookAccount.js';
 
 /**
  * Verify webhook token from Facebook
