@@ -1,43 +1,21 @@
 import db from '../config/database.js';
 
 /**
- * Create messages table if it doesn't exist
+ * Verify messages table structure (using existing table)
  */
 export const createMessagesTable = async () => {
   try {
-    const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS messages (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        facebook_message_id VARCHAR(255) UNIQUE NOT NULL,
-        facebook_account_id INT NOT NULL,
-        sender_fb_id VARCHAR(255) NOT NULL,
-        recipient_fb_id VARCHAR(255) NOT NULL,
-        page_id VARCHAR(255),
-        message_text TEXT,
-        message_type ENUM('text', 'attachment', 'postback', 'received', 'sent') DEFAULT 'text',
-        direction ENUM('inbound', 'outbound') NOT NULL,
-        timestamp DATETIME NOT NULL,
-        attachments JSON,
-        status ENUM('unread', 'read', 'replied', 'delivered', 'failed') DEFAULT 'unread',
-        platform VARCHAR(50) DEFAULT 'facebook_marketplace',
-        ghl_contact_id INT,
-        processed BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_facebook_account_id (facebook_account_id),
-        INDEX idx_sender_fb_id (sender_fb_id),
-        INDEX idx_timestamp (timestamp),
-        INDEX idx_status (status),
-        INDEX idx_processed (processed),
-        FOREIGN KEY (facebook_account_id) REFERENCES facebook_accounts(id) ON DELETE CASCADE
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-    `;
+    // Just verify the table exists since you already have it
+    const [rows] = await db.execute("SHOW TABLES LIKE 'messages'");
+    
+    if (rows.length === 0) {
+      throw new Error('Messages table does not exist. Please run the ALTER queries first.');
+    }
 
-    await db.execute(createTableQuery);
-    console.log('✅ Messages table created/verified successfully');
+    console.log('✅ Messages table verified successfully');
 
   } catch (error) {
-    console.error('Error creating messages table:', error.message);
+    console.error('Error verifying messages table:', error.message);
     throw error;
   }
 };
@@ -60,7 +38,7 @@ export const saveMessage = async (messageData) => {
       attachments = null,
       status = 'unread',
       platform = 'facebook_marketplace',
-      ghl_contact_id = null,
+      contact_id = null, // Updated to match your existing column name
       processed = false
     } = messageData;
 
@@ -81,11 +59,12 @@ export const saveMessage = async (messageData) => {
         direction,
         timestamp,
         attachments,
+        marketplace_data,
         status,
         platform,
-        ghl_contact_id,
+        contact_id,
         processed
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const values = [
@@ -99,9 +78,10 @@ export const saveMessage = async (messageData) => {
       direction,
       timestamp,
       attachments ? JSON.stringify(attachments) : null,
+      null, // marketplace_data - will be populated later
       status,
       platform,
-      ghl_contact_id,
+      contact_id,
       processed
     ];
 

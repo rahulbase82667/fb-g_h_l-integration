@@ -1,5 +1,5 @@
 import express from 'express';
-import { processIncomingMessage, verifyWebhook } from '../services/messageProcessor.js';
+import { processIncomingMessage, verifyWebhook } from '../services/MessageProcessor.js';
 
 const router = express.Router();
 
@@ -10,12 +10,12 @@ router.get('/facebook', async (req, res) => {
     
     // Verify webhook token
     const isValid = await verifyWebhook(mode, token);
-    
+      
     if (isValid) {
-      console.log('✅ Facebook webhook verified successfully');
+      console.log(' Facebook webhook verified successfully');
       return res.status(200).send(challenge);
     } else {
-      console.log('❌ Facebook webhook verification failed');
+      console.log(' Facebook webhook verification failed');
       return res.status(403).json({ 
         success: false, 
         error: 'Forbidden - Invalid verify token' 

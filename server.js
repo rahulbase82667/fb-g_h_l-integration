@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.js';
 import facebookRoutes from './routes/facebook.js';
 import startTokenRefreshJob from './services/tokenRefreshJob.js';
 import ghlRoutes from './routes/ghl.js';
+import webhookRoutes from './routes/webhooks.js';
 
 dotenv.config();
 
@@ -30,6 +31,17 @@ const limiter = rateLimit({
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
   message: { error: 'Too many requests, please try again later' }
 });
+
+// Special rate limiting for webhooks (more permissive)
+const webhookLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 1000, // Allow more requests for webhooks
+  message: {
+    error: 'Webhook rate limit exceeded'
+  }
+});
+app.use('/webhooks', express.raw({ type: 'application/json' }));
+
 app.use('/api', limiter);
 
 // Body parsing
@@ -64,7 +76,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/facebook', facebookRoutes);
 app.use('/api/g_h_l', ghlRoutes);
-// app.use('/api/webhooks', webhookRoutes);
+app.use('/webhooks', webhookLimiter, webhookRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

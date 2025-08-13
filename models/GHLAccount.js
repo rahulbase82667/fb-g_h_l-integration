@@ -159,7 +159,7 @@ export class GHLAccount {
   }
 
   // Update location info
-  static async updateLocation(id, locationId, locationName) {
+  static async updateLocation(id, locationId, locationName) { 
     try {
       const query = `
         UPDATE ghl_accounts 
