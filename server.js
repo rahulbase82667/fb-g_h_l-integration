@@ -6,9 +6,10 @@ import dotenv from 'dotenv';
 import { testConnection } from './config/database.js';
 import authRoutes from './routes/auth.js';
 import facebookRoutes from './routes/facebook.js';
-import startTokenRefreshJob from './services/tokenRefreshJob.js';
 import ghlRoutes from './routes/ghl.js';
-import webhookRoutes from './routes/webhook.js';
+import { getFacebookAccounts } from './models/FacebookAccount.js';
+import { scrapeMarketplaceMessages,scrapeChatList,sendMessage,scrapeNewMessages } from './services/scrapeMarketplaceMessages.js';
+import { getLastMessage } from './models/message.js';
 
 dotenv.config();
 
@@ -58,7 +59,28 @@ app.get('/health', async (req, res) => {
     environment: process.env.NODE_ENV
   });
 });
+app.get('/test-scraper', async (req, res) => {
+  try {
+    // const data = await scrapeNewMessages(1,'https://www.facebook.com/messages/t/742182578820330');
+    // const data = await sendMessage(1);
+    const data = await scrapeMarketplaceMessages(1);
+    // const data = await scrapeChatList(1);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
+app.get('/test-query', async (req, res) => {
+  try {
+    const id=req.query.id;
+    console.log(req.query)
+    const data = await getLastMessage(id);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 // Basic routes
 app.get('/', (req, res) => {
   res.json({
@@ -67,7 +89,7 @@ app.get('/', (req, res) => {
     status: 'running'
   });
 });
-
+app.get('/acc',getFacebookAccounts);
 // Future route imports (uncomment as you build them)
 // import authRoutes from './routes/auth.js';
 // import facebookRoutes from './routes/facebook.js';
@@ -76,7 +98,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/facebook', facebookRoutes);
 app.use('/api/g_h_l', ghlRoutes);
-app.use('/webhook', webhookLimiter, webhookRoutes);
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -109,7 +131,7 @@ const startServer = async () => {
       console.log(` Health check: http://localhost:${port}/health`);
         
       // Start the token refresh cron job 
-      startTokenRefreshJob();
+      // startTokenRefreshJob();
     });
     
   } catch (error) {

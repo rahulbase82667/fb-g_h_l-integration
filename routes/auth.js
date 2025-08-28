@@ -122,7 +122,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
           email: user.email,
           role: user.role,
           reseller_id: user.reseller_id,
-          created_at: user.created_at
+          created_at: user.created_at 
         }
       }
     });
@@ -203,3 +203,5 @@ router.get('/validate', authenticateToken, (req, res) => {
 });
 
 export default router;
+
+

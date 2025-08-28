@@ -1,119 +1,125 @@
-import db from '../config/database.js';
+// models/facebookAccount.js
+import { query } from "../config/database.js";
 
-export class FacebookAccount {
-  static async findByUserId(userId) {
-    try {
-      const query = `
-        SELECT * FROM facebook_accounts 
-        WHERE user_id = ? AND status = 'active'
-      `;
-      const [rows] = await db.execute(query, [userId]);
-      return rows;
-    } catch (error) {
-      throw new Error(`Failed to find Facebook accounts: ${error.message}`);
+/**
+ * Create a new Facebook account record
+ */
+export async function createFacebookAccount(data) {
+  console.log(data);
+  try {
+    if (!data.userId || !data.passwordEncrypted) {
+      throw new Error("userId and passwordEncrypted are required");
     }
-  }
 
-  static async findByFacebookUserId(facebookUserId) {
-    try {
-      const query = `
-        SELECT * FROM facebook_accounts 
-        WHERE facebook_user_id = ? AND status = 'active'
-      `;
-      const [rows] = await db.execute(query, [facebookUserId]);
-      return rows[0] || null;
-    } catch (error) {
-      throw new Error(`Failed to find Facebook account: ${error.message}`);
-    }
-  }
+    const result = await query(
+      `INSERT INTO fb_accounts 
+      (user_id, account_name, email, phone_number, password_encrypted, proxy_url, login_status, status)
+      VALUES (?, ?, ?, ?, ?, ?, 'active', 'active')`,
+      [
+        data.userId,
+        data.accountName || null,
+        data.email || null,
+        data.phoneNumber || null,
+        data.passwordEncrypted,
+        data.proxyUrl || null,
+      ]
+    );
 
-  static async updateToken(id, newToken) {
-    try {
-      const query = `
-        UPDATE facebook_accounts 
-        SET access_token = ?, token_expires_at = DATE_ADD(NOW(), INTERVAL 60 DAY)
-        WHERE id = ?
-      `;
-      const [result] = await db.execute(query, [newToken, id]);
-      return result.affectedRows > 0;
-    } catch (error) {
-      throw new Error(`Failed to update token: ${error.message}`);
-    }
-  }
-
-  static async getExpiringSoon() {
-    try {
-      const query = `
-        SELECT * FROM facebook_accounts 
-        WHERE token_expires_at < DATE_ADD(NOW(), INTERVAL 7 DAY)
-        AND status = 'active'
-      `;
-      const [rows] = await db.execute(query);
-      return rows;
-    } catch (error) {
-      throw new Error(`Failed to get expiring accounts: ${error.message}`);
-    }
-  }
-
-  // Find by ID
-  static async findById(id) {
-    try {
-      const query = `
-      SELECT * FROM facebook_accounts 
-      WHERE id = ? AND status = 'active'
-    `;
-      const [rows] = await db.execute(query, [id]);
-      return rows[0] || null;
-    } catch (error) {
-      throw new Error(`Failed to find Facebook account: ${error.message}`);
-    }
-  }
-
-  // Mark account as expired (needs re-authentication)
-  static async markAsExpired(id) {
-    try {
-      const query = `
-      UPDATE facebook_accounts 
-      SET status = 'expired', 
-          updated_at = NOW()
-      WHERE id = ?
-    `;
-      const [result] = await db.execute(query, [id]);
-      return result.affectedRows > 0;
-    } catch (error) {
-      throw new Error(`Failed to mark account as expired: ${error.message}`);
-    }
-  }
-
-  // Mark account as needing attention
-  static async markAsNeedsAttention(id) {
-    try {
-      const query = `
-      UPDATE facebook_accounts 
-      SET status = 'needs_attention', 
-          updated_at = NOW()
-      WHERE id = ?
-    `;
-      const [result] = await db.execute(query, [id]);
-      return result.affectedRows > 0;
-    } catch (error) {
-      throw new Error(`Failed to mark account as needs attention: ${error.message}`);
-    }
-  }
-
-  // Get all accounts that need user attention
-  static async getNeedsAttention() {
-    try {
-      const query = `
-      SELECT fa.*, u.email as user_email 
-      FROM facebook_accounts fa
-      JOIN users u ON fa.user_id = u.id
-      WHERE fa.status IN ('expired', 'needs_attention')
-    `;
-      const [rows] = await db.execute(query);
-      return rows;
-    } catch (error) {
-      throw new Error(`Failed to get accounts needing attention: ${error.message}`);
-    }
+    return result.insertId;
+  } catch (error) {
+    console.error("DB Error: createFacebookAccount:", error.message);
+    throw new Error("Failed to create Facebook account");
   }
 }
+
+/**
+ * Get all Facebook accounts
+ */
+export async function getFacebookAccounts() {
+  try {
+    const rows = await query("SELECT * FROM fb_accounts");
+    return rows;
+  } catch (error) {
+    console.error("DB Error: getFacebookAccounts:", error.message);
+    throw new Error("Failed to fetch Facebook accounts");
+  }
+}
+/**
+ * Get a single Facebook account by ID
+ */
+export async function getFacebookAccountById(id) {
+
+  try {
+    if (!id) throw new Error("Account ID is required");
+
+    const rows = await query(`SELECT * FROM fb_accounts WHERE id = ?`, [
+      id,
+    ]);
+
+    if (!rows || rows.length === 0) {
+      throw new Error("Facebook account not found");
+    }
+
+    return rows[0]; // return single account object
+  } catch (error) {
+    console.error("DB Error: getFacebookAccountById:", error.message);
+    throw new Error(error.message || "Failed to fetch Facebook account");
+  }
+}
+
+/**
+ * Update a Facebook account by ID
+ */
+export async function updateFacebookAccount(id, data) {
+  try {
+    if (!id) throw new Error("Account ID is required");
+
+    const result = await query("UPDATE fb_accounts SET session_cookies = ?, last_login= ?, login_status= ? WHERE id = ?", [
+      data.session_cookies,
+      data.last_login,
+      data.login_status,
+      id,
+    ]);
+
+    if (result.affectedRows === 0) {
+      throw new Error("Facebook account not found");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("DB Error: updateFacebookAccount:", error.message);
+    throw new Error(error.message || "Failed to update Facebook account");
+  }
+}
+
+/**
+ * Delete a Facebook account by ID
+ */
+export async function deleteFacebookAccount(id) {
+  try {
+    if (!id) throw new Error("Account ID is required");
+
+    const result = await query("DELETE FROM fb_accounts WHERE id = ?", [
+      id,
+    ]);
+
+    if (result.affectedRows === 0) {
+      throw new Error("Facebook account not found");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("DB Error: deleteFacebookAccount:", error.message);
+    throw new Error(error.message || "Failed to delete Facebook account");
+  }
+}
+
+
+
+export default {
+  createFacebookAccount,
+  getFacebookAccounts,
+  updateFacebookAccount,
+  deleteFacebookAccount,
+  getFacebookAccountById,
+};

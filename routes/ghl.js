@@ -173,7 +173,7 @@ router.get('/accounts', authenticateToken, async (req, res) => {
     res.json({
       success: true,
       accounts,
-      count: accounts.length
+      count: accounts.length  
     });
   } catch (error) {
     console.error('Get GHL accounts error:', error);
