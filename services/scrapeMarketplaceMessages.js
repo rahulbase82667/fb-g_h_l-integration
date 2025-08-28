@@ -203,7 +203,7 @@ async function saveScrapedData(scrapedData) {
 
       // Step 2: Create a promise for each message and return them
       const messagePromises = convo.messages.map(msg =>
-        createMessage(convoId, msg.sender, msg.text, msg.timestamp, msg.messageIndex)
+        createMessage(convoId, msg.sender, msg.text, convertToTimestamp(msg.timestamp), msg.messageIndex)
       );
 
       // Return an array of promises for this conversation's messages
@@ -409,6 +409,7 @@ export async function scrapeMarketplaceMessages(accountId, options = {}) {
                 if (text && text.length > 0) {
                   extractedMessages.push({
                     sender,
+                    text,
                     timestamp,
                     messageIndex: index
                   });
