@@ -1324,3 +1324,282 @@ export async function scrapeSingleMarketplaceChat(accountId, chatUrl) {
     }
   }
 }
+
+export async function scrapeMarketplaceMessagesTest(accountId, options = {},Findtext="345543443434",timeStamp="1755865680000",indexNumber="33") {
+  const { maxConversations = 10, delayBetweenChats = 2000 } = options;
+  let browser;
+
+  try {
+    // 1. Load account + cookies
+    const account = await getFacebookAccountById(accountId);
+    if (!account || !account.session_cookies) {
+      throw new Error("Account or cookies not found");
+    }
+
+    const cookies = JSON.parse(account.session_cookies);
+
+    // 2. Launch Puppeteer with better stealth settings
+    browser = await puppeteer.launch({
+      headless: false,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-blink-features=AutomationControlled",
+        "--disable-features=VizDisplayCompositor"
+      ],
+      defaultViewport: { width: 1366, height: 768 }
+    });
+
+    const page = await browser.newPage();
+
+    // Set user agent to avoid detection
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+    // Set cookies
+    await browser.setCookie(...cookies);
+
+    // 3. Navigate to Facebook Messages
+    console.log("Navigating to Facebook Messages...");
+    // await page.goto("https://www.facebook.com/messages", {
+    //   waitUntil: "networkidle2",
+    //   timeout: 30000
+    // });
+    console.log("Page loaded, waiting for chat interface...");
+    const chatUrls = await getChatUrls(accountId);
+    const parsedUrls = JSON.parse(chatUrls[0].url);
+    const chatList = parsedUrls.map(entry => entry.chatUrl);
+
+    //  return chatList
+
+    if (chatList.length === 0) {
+      throw new Error("No chat conversations found. The page structure might have changed.");
+    }
+
+    console.log(`Found ${chatList.length} conversation(s)`);
+    // return;
+    // 5. Process conversations with limits and error handling
+    const scrapedData = [];
+    const conversationsToProcess = Math.min(chatList.length, maxConversations);
+
+    for (let i = 0; i < conversationsToProcess; i++) {
+      
+      try {
+        const chatUrl = chatList[i];
+        console.log(`Processing conversation ${i + 1}/${conversationsToProcess}`);
+
+        // Navigate to individual chat
+        await page.goto(chatUrl, {
+          waitUntil: "networkidle2",
+          timeout: 30000
+        });
+
+        // Wait for chat to load
+        await page.waitForFunction(() => {
+          return document.querySelector('div[role="main"]') &&
+            document.querySelectorAll('div[role="row"]').length > 0;
+        }, { timeout: 15000 });
+
+
+        let chatPartner = await page.evaluate(() => {
+          const target = Array.from(document.querySelectorAll('[aria-label]')).find(el =>
+            el.getAttribute('aria-label').toLowerCase().includes('conversation')
+          );
+          return target ? target.querySelector('h2')?.textContent || null : null;
+        });
+
+        console.log(`Scraping conversation with: ${chatPartner}`);
+        if (!chatPartner.includes('·')) {
+          console.log('Not a valid conversation');
+          continue
+        }
+
+  
+        const messages = await page.evaluate(async (chatPartner,Findtext,indexNumber=32) => {
+          function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+          }
+
+          try {
+            // 🔹 Step 1: Scroll until "View buyer profile"
+            const conversationContainer = document.querySelector('div[aria-label*="Messages in conversation titled"]');
+            if (conversationContainer) {
+              const scrollContainers = conversationContainer.querySelectorAll('.x78zum5');
+
+              for (const container of scrollContainers) {
+                let attempts = 0;
+                while (attempts < 20 ) { // prevent infinite loop
+                  const rows = Array.from(conversationContainer.querySelectorAll('div[role="row"]'));
+                  const hasBuyerProfile = rows.some(r => r.textContent.includes( 'View buyer profile')|| r.textContent.includes(Findtext));
+
+                  if (hasBuyerProfile) {
+                    console.log("Reached 'View buyer profile'");
+                    break;
+                  }
+
+                  container.scrollBy(0, -1400); // scroll upward
+                  await sleep(2000); // wait for more messages to load
+                  attempts++;
+                }
+              }
+            }
+
+            // 🔹 Step 2: Extract messages
+            const rows = document.querySelectorAll("div[role='row']");
+            let lastSeenTimestamp = null;
+            let messageCounter = indexNumber;  // Start from given indexNumber
+
+            let  extractedMessages = [];
+
+            rows.forEach((row) => {
+              try {
+                console.log("Raw row text:", row.textContent);
+
+                if (!row.querySelector('div[dir="auto"]') && !row.textContent.trim()) return;
+                // Detect sender
+                let sender = "Unknown";
+                const senderSpan = row.querySelector("span");
+                const senderText = senderSpan?.innerText?.trim() || "";
+                if (senderText.includes("You sent") || senderText.includes("You:")) {
+                  sender = "You";
+                } else if (row.closest('[data-testid*="outgoing"]') ||
+                  row.querySelector('[aria-label*="You sent"]')) {
+                  sender = "You";
+                } else {
+                  sender = chatPartner;
+                }
+
+                // Extract text
+                const textElements = Array.from(row.querySelectorAll("div[dir='auto']"));
+                const text = textElements
+                  .map(div => div.innerText?.trim() || "")
+                  .filter(t => t.length > 0 &&
+                    !t.includes("Rate") &&
+                    !t.includes("Message sent") &&
+                    !t.includes("Delivered") &&
+                    !t.includes("Seen"))
+                  .join(" ")
+                  .trim();
+
+                // Extract timestamp
+                let timestamp = null;
+                const timeSelectors = [
+                  "h4 span",
+                  "abbr[aria-label]",
+                  "[title*='at']",
+                  "time",
+                  "[aria-label*='at']"
+                ];
+
+                for (const selector of timeSelectors) {
+                  const timeEl = row.querySelector(selector);
+                  if (timeEl) {
+                    timestamp = timeEl.innerText ||
+                      timeEl.getAttribute("aria-label") ||
+                      timeEl.getAttribute("title");
+                    if (timestamp) break;
+                  }
+                }
+
+                if (timestamp) {
+                  lastSeenTimestamp = timestamp;
+                } else {
+                  timestamp = lastSeenTimestamp;
+                }
+                if(!timestamp.includes(":")){
+                  timestamp = "";
+                }
+                // convertToTimestamp(timestamp)
+                console.log(`timestamp is: ${timestamp}`)
+                if (text && text.length > 0) {
+                  messageCounter++;
+                  extractedMessages.push({
+                    sender,
+                    text,
+                    timestamp,
+                    messageIndex: messageCounter
+                  });
+                }
+              } catch (rowError) {
+                console.error(`Error processing message row ${index}:`, rowError);
+              }
+            });
+            console.log(extractedMessages)
+            return extractedMessages;
+          } catch (error) {
+            console.error("Error in message extraction:", error);
+            return [];
+          }
+        }, chatPartner,Findtext,indexNumber);
+
+
+
+        console.log(`Extracted ${messages.length} messages from conversation with ${chatPartner}`);
+
+        // Store conversation data
+        scrapedData.push({
+          chatUrl,
+          chatPartner,
+          messages,
+          totalMessages: messages.length,
+          scrapedAt: new Date().toISOString()
+        });
+
+        // Add delay between conversations to avoid rate limiting
+        if (i < conversationsToProcess - 1) {
+          console.log(`Waiting ${delayBetweenChats}ms before next conversation...`);
+          await new Promise(resolve => setTimeout(resolve, delayBetweenChats));
+        }
+
+      } catch (conversationError) {
+        console.error(`Error processing conversation ${i + 1}:`, conversationError.message);
+        // Continue with next conversation instead of failing completely
+        continue;
+      }
+    }
+
+    console.log("Scraping completed successfully");
+
+
+    // await saveScrapedData(scrapedData);
+    // return  scrapedData;
+    return {
+      success: true,
+      totalConversations: chatList.length,
+      processedConversations: scrapedData.length,
+      data: scrapedData,
+      summary: {
+        totalMessages: scrapedData.reduce((sum, conv) => sum + conv.totalMessages, 0),
+        conversationPartners: scrapedData.map(conv => conv.chatPartner)
+      }
+    };
+
+  } catch (error) {
+    console.error("Scraping error:", error.message);
+
+    // // // Update account with error status
+    // try {
+    //   await updateFacebookAccount(accountId, { 
+    //     login_status: "error",
+    //     last_error: error.message,
+    //     last_scraped: new Date().toISOString()
+    //   });
+    // } catch (updateError) {
+    //   console.error("Failed to update account status:", updateError.message);
+    // }
+
+    // return {
+    //   success: false,
+    //   error: error.message,
+    //   // partialData: scrapedData.length > 0 ? scrapedData : undefined
+    // };
+  } finally {
+    if (browser) {
+      try {
+        await browser.close();
+        console.log("Browser closed successfully");
+      } catch (closeError) {
+        console.error("Error closing browser:", closeError.message);
+      }
+    }
+  }
+}
