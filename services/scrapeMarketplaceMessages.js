@@ -1,8 +1,8 @@
 import { getFacebookAccountById } from "../models/FacebookAccount.js";
 import chatUrls, { getChatUrls, addChatUrls, updateChatUrls } from "../models/chatUrls.js"
 import { createConversation } from "../models/conversations.js";
-import { createMessage } from "../models/Message.js";
-
+import { createMessage, getLastMessage } from "../models/Message.js";
+import {getConversationByUrl} from "../models/conversations.js"
 import { updateFacebookAccount } from "../models/FacebookAccount.js";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
@@ -1596,10 +1596,24 @@ export async function scrapeMarketplaceMessagesTestt(accountId, options = {}, Fi
 
 //////////////// crafting functions
 
-async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber = 0) {
+async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber = 0, isRecursive = false) {
   return await page.evaluate(async (chatPartner, Findtext, indexNumber) => {
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
+    } 
+    function getLatestMesssage() {
+      let array = [];
+      let text = document.querySelector('div[aria-label*="Messages in conversation titled"]')
+        .querySelectorAll('div[role="row"]')
+        .forEach((e) => { arr.push(e) });
+      let response = arr[arr.length - 1].innerText.split('\n');
+      return response
+    }
+    if (isRecursive) {
+      const latestMessage = getLatestMesssage();
+      if (latestMessage[1].includes(Findtext)) {
+        return [];
+      }
     }
     try {
       const conversationContainer = document.querySelector('div[aria-label*="Messages in conversation titled"]');
@@ -1928,7 +1942,9 @@ export async function scrapeMarketplaceMessagesTest(accountId, chatUrls = [], Fi
     }
   }
 }
-export async function scrapeChat(accountId, chatUrls = [], Findtext = "345543443434", timeStamp = "", indexNumber = '') {
+// export async function scrapeChat(accountId, chatUrls = [], Findtext = "345543443434", timeStamp = "", indexNumber = '') {
+export async function scrapeChat(accountId, chatUrls = [], Findtext,  indexNumber = 0, isRecursive = false) {
+
   // const { maxConversations = 10, delayBetweenChats = 2000 } = options;
   const maxConversations = 1;
   const delayBetweenChats = 2000;
@@ -1964,13 +1980,13 @@ export async function scrapeChat(accountId, chatUrls = [], Findtext = "345543443
     const scrapedData = [];
     try {
       // Navigate to individual chat
-      for(let chatUrl of chatUrls){
+      for (let chatUrl of chatUrls) {
         console.log(`Navigating to chat: ${chatUrl}`);
         await page.goto(chatUrl, {
           waitUntil: "networkidle2",
           timeout: 30000
         });
-       
+
         // Wait for chat to load
         await page.waitForFunction(() => {
           return document.querySelector('div[role="main"]') &&
@@ -1998,26 +2014,31 @@ export async function scrapeChat(accountId, chatUrls = [], Findtext = "345543443
             }
           };
         }
-
-        const getmessages = await extractMessagesFromPage(page, chatPartner, Findtext, 50);
+        if(isRecursive){
+          const conversation=await getConversationByUrl(chatUrl);
+          const getLastMessage=await getLastMessage(conversation.id);
+          Findtext=getLastMessage.text;
+          indexNumber=getLastMessage.message_index;
+        }
+        const getmessages = await extractMessagesFromPage(page, chatPartner, Findtext, indexNumber, isRecursive);
         const messages = filterMessagesAfterFindText(getmessages, Findtext);
         console.log(`Extracted ${messages.length} messages from conversation with ${chatPartner}`);
-      
-      // Store conversation data
-      scrapedData.push({
-        chatUrl,
-        chatPartner,
-        messages,
-        // totalMessages: messages.length,
-        scrapedAt: new Date().toISOString()
-      });
-    }
+
+        // Store conversation data
+        scrapedData.push({
+          chatUrl,
+          chatPartner,
+          messages,
+          // totalMessages: messages.length,
+          scrapedAt: new Date().toISOString()
+        });
+      }
     } catch (conversationError) {
       console.error(`Error processing conversation :`, conversationError.message);
       // Continue with next conversation instead of failing completely
     }
     console.log("Scraping completed successfully");
-    // await saveScrapedData(scrapedData);
+    await saveScrapedData(scrapedData);
     // return  scrapedData;
     return {
       success: true,
@@ -2033,22 +2054,22 @@ export async function scrapeChat(accountId, chatUrls = [], Findtext = "345543443
   } catch (error) {
     console.error("Scraping error:", error.message);
 
-    // // // Update account with error status
-    // try {
-    //   await updateFacebookAccount(accountId, { 
-    //     login_status: "error",
-    //     last_error: error.message,
-    //     last_scraped: new Date().toISOString()
-    //   });
-    // } catch (updateError) {
-    //   console.error("Failed to update account status:", updateError.message);
-    // }
+    // // Update account with error status
+    try {
+      await updateFacebookAccount(accountId, {
+        login_status: "error",
+        last_error: error.message,
+        last_scraped: new Date().toISOString()
+      });
+    } catch (updateError) {
+      console.error("Failed to update account status:", updateError.message);
+    }
 
-    // return {
-    //   success: false,
-    //   error: error.message,
-    //   // partialData: scrapedData.length > 0 ? scrapedData : undefined
-    // };
+    return {
+      success: false,
+      error: error.message,
+      // partialData: scrapedData.length > 0 ? scrapedData : undefined
+    };
   } finally {
     if (browser) {
       try {
@@ -2060,19 +2081,37 @@ export async function scrapeChat(accountId, chatUrls = [], Findtext = "345543443
     }
   }
 }
- 
+
 
 export async function scrapeAllChats(accountId) {
-    if(!accountId){
-        throw new Error("Account ID is required");
-    }
-    const chatList=await getChatUrls(accountId);
-    if(!chatList || chatList.length === 0){
-        throw new Error("Chat urls not found");
-    }
-    return await scrapeChat(accountId,chatList);
+  if (!accountId) {
+    throw new Error("Account ID is required");
+  }
+  const chatList = await getChatUrls(accountId);
+  if (!chatList || chatList.length === 0) {
+    throw new Error("Chat urls not found");
+  }
+  return await scrapeChat(accountId, chatList);
+}
+
+export async function scrapeSingleChat(accountId, conversationId, chatUrls) {
+  if (!accountId) {
+    throw new Error("Account ID is required");
+  }
+  if (!chatUrls || chatUrls.length === 0) {
+    throw new Error("Chat urls is required");
+  }
+  const Findtext = await getLastMessage(conversationId);
+  return Findtext;
+  // return await scrapeChat(accountId, chatUrls, Findtext, index);
+}
+
+
+export async function recursiveScrape(accountId) {
 
 }
+
+
 
 //-0--------------------------------- helpers
 
@@ -2085,4 +2124,20 @@ function filterMessagesAfterFindText(messages, findText) {
   }
   // Return all messages after the one containing Findtext
   return messages.slice(index + 1);
+}
+
+
+function getLatestMesssage() {
+  let array = [];
+  let text = document.querySelector('div[aria-label*="Messages in conversation titled"]')
+    .querySelectorAll('div[role="row"]')
+    .forEach((e) => { arr.push(e) });
+  let response = arr[arr.length - 1].innerText.split('\n');
+  return response
+}
+
+export async function test(){
+  // const data=await getConversationByUrl("https://www.facebook.com/messages/t/742182578820330");
+const data= await getLastMessage(2);
+return data
 }

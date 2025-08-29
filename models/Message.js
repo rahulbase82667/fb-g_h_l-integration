@@ -15,7 +15,8 @@ export async function getMessagesByConversation(conversationId) {
   return rows;
 }
 
-export async function getLastMessage(conversationId=1) {
-  const [rows] = await db.query(`SELECT * FROM messages WHERE conversation_id = ?  ORDER BY message_index DESC LIMIT 1`, [conversationId,conversationId]);
+
+export async function getLastMessage(conversationId) {
+  const [rows] = await db.query(`SELECT * FROM messages WHERE conversation_id = ?  ORDER BY message_index DESC LIMIT 1`, [conversationId, conversationId]);
   return rows[0];
 }
