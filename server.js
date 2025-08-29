@@ -17,7 +17,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 app.set('trust proxy', 1);
 
-// Security middleware
+// Security middleware 
 app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'

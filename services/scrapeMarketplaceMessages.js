@@ -2060,7 +2060,7 @@ export async function scrapeChat(accountId, chatUrls = [], Findtext = "345543443
     }
   }
 }
-
+ 
 
 export async function scrapeAllChats(accountId) {
     if(!accountId){
