@@ -1,7 +1,7 @@
 import { getFacebookAccountById } from "../models/FacebookAccount.js";
 import chatUrls, { getChatUrls, addChatUrls, updateChatUrls } from "../models/chatUrls.js"
 import { createConversation } from "../models/conversations.js";
-import { createMessage } from "../models/message.js";
+import { createMessage } from "../models/Message.js";
 
 import { updateFacebookAccount } from "../models/FacebookAccount.js";
 import puppeteer from "puppeteer-extra";

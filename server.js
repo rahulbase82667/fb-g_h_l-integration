@@ -9,7 +9,7 @@ import facebookRoutes from './routes/facebook.js';
 import ghlRoutes from './routes/ghl.js';
 import { getFacebookAccounts } from './models/FacebookAccount.js';
 import { scrapeMarketplaceMessages,scrapeChatList,sendMessage,scrapeNewMessages,scrapeMarketplaceMessagesTest,scrapeAllChats } from './services/scrapeMarketplaceMessages.js';
-import { getLastMessage } from './models/message.js';
+import { getLastMessage } from './models/Message.js';
 
 dotenv.config();
 
