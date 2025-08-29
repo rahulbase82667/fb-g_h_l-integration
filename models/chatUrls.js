@@ -27,9 +27,9 @@ export async function getChatUrls(accountId) {
         if (!rows || rows.length === 0) {
             // throw new Error("Chat urls not found");
             return null;
-        }
-
-        return rows;
+        }   
+        let chatUrls=JSON.parse(rows[0].url).map(entry => entry.chatUrl);
+        return chatUrls;
 
     } catch (e) {
         console.error("DB Error: getChatUrls:", e.message);
@@ -48,6 +48,7 @@ export async function updateChatUrls(accountId,chatUrls) {
         if (!rows || rows.length === 0) {
             throw new Error("Chat urls not found");
         }
+        
 
         return rows;
 

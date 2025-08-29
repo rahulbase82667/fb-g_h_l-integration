@@ -8,7 +8,7 @@ import authRoutes from './routes/auth.js';
 import facebookRoutes from './routes/facebook.js';
 import ghlRoutes from './routes/ghl.js';
 import { getFacebookAccounts } from './models/FacebookAccount.js';
-import { scrapeMarketplaceMessages,scrapeChatList,sendMessage,scrapeNewMessages,scrapeMarketplaceMessagesTest } from './services/scrapeMarketplaceMessages.js';
+import { scrapeMarketplaceMessages,scrapeChatList,sendMessage,scrapeNewMessages,scrapeMarketplaceMessagesTest,scrapeAllChats } from './services/scrapeMarketplaceMessages.js';
 import { getLastMessage } from './models/message.js';
 
 dotenv.config();
@@ -63,15 +63,15 @@ app.get('/test-scraper', async (req, res) => {
   try {
     // const data = await scrapeNewMessages(1,'https://www.facebook.com/messages/t/742182578820330');
     // const data = await sendMessage(1);
-    const data = await scrapeMarketplaceMessagesTest(1);
-    // const data = await scrapeMarketplaceMessages(1);
+    // const data = await scrapeMarketplaceMessagesTest(1);
+    const data = await scrapeAllChats(1);
     // const data = await scrapeChatList(1);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
+ 
 app.get('/test-query', async (req, res) => {
   try {
     const id=req.query.id;
