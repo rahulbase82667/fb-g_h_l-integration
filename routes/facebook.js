@@ -37,8 +37,11 @@ router.get("/", async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   } 
 });
-router.get('/test',(async () => {
-  const result = await loginFacebookAccount(1); // test with account ID 1
+router.get('/login/:id',(async (req, res) => {
+  const accountId = req.params.id;
+  console.log(accountId)
+  const result = await loginFacebookAccount(accountId); // test with account ID 1
+  
   console.log(result);
 }));
 // Update account

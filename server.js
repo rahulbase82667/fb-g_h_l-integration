@@ -8,12 +8,12 @@ import authRoutes from './routes/auth.js';
 import facebookRoutes from './routes/facebook.js';
 import ghlRoutes from './routes/ghl.js';
 import { getFacebookAccounts } from './models/FacebookAccount.js';
-import { test,scrapeMarketplaceMessages, scrapeChatList, sendMessage, scrapeNewMessages, scrapeMarketplaceMessagesTest, scrapeAllChats, scrapeSingleChat } from './services/scrapeMarketplaceMessages.js';
+import { test,scrapeChatList, sendMessage , scrapeSingleChat, scrapeChat,scrapeAllChats } from './services/scrapeMarketplaceMessages.js';
 import { getLastMessage } from './models/Message.js';
-
+import messageRouter from "./routes/message.js"; // adjust path if different
 dotenv.config();
 
-const app = express();
+const app = express()
 const port = process.env.PORT || 3000;
 app.set('trust proxy', 1);
 
@@ -65,13 +65,14 @@ app.get('/test-scraper', async (req, res) => {
     // const data = await sendMessage(1);
     // const data = await scrapeMarketplaceMessagesTest(1);
     // const data = await scrapeAllChats(1);
-    const data = await test();
+    const data = await scrapeAllChats(1);
     // const data = await scrapeChatList(1);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 app.get('/test-query', async (req, res) => {
   try {
@@ -100,6 +101,7 @@ app.get('/acc', getFacebookAccounts);
 app.use('/api/auth', authRoutes);
 app.use('/api/facebook', facebookRoutes);
 app.use('/api/g_h_l', ghlRoutes);
+app.use('/api/messages', messageRouter);
 
 
 

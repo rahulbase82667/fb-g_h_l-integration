@@ -9,12 +9,15 @@ import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { Keyboard, timeout } from "puppeteer";
 import { loginFacebookAccount } from "./puppeteerLogin.js";
 import { convertToTimestamp } from "../utils/helpers.js";
+import axios from "axios";
+
 puppeteer.use(StealthPlugin());
-const chatContainerSelector = `div[aria-label="Messages in conversation titled"]`;
+
 
 
 /**
  * Scrape Marketplace conversations + messages
+ * 
  */
 
 
@@ -1004,605 +1007,16 @@ export async function sendMessage(accountId, options = {}) {
 }
 
 
-export async function scrapeNewMessages(accountId, chatUrl, lastMessageIndex = 35) {
-  let browser;
-  try {
-    const account = await getFacebookAccountById(accountId);
-    if (!account || !account.session_cookies) {
-      throw new Error("Account or cookies not found");
-    }
-
-    const cookies = JSON.parse(account.session_cookies);
-
-    browser = await puppeteer.launch({
-      headless: false,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      defaultViewport: { width: 1366, height: 768 }
-    });
-
-    const page = await browser.newPage();
-    await browser.setCookie(...cookies);
-    await page.goto(chatUrl, { waitUntil: "networkidle2", timeout: 30000 });
-
-    // wait for chat rows
-    await page.waitForSelector("div[role='row']", { timeout: 15000 });
-
-    // extract messages, but stop at last known messageIndex
-    const newMessages = await page.evaluate(
-      (chatPartner, lastMessageIndex) => {
-        const rows = document.querySelectorAll("div[role='row']");
-        let lastSeenTimestamp = null;
-        const extracted = [];
-
-        rows.forEach((row, index) => {
-          if (index <= lastMessageIndex) return; // skip old messages
-
-          const textElements = Array.from(row.querySelectorAll("div[dir='auto']"));
-          const text = textElements
-            .map(div => div.innerText?.trim() || "")
-            .filter(
-              t =>
-                t.length > 0 &&
-                !t.includes("Rate") &&
-                !t.includes("Message sent") &&
-                !t.includes("Delivered") &&
-                !t.includes("Seen")
-            )
-            .join(" ")
-            .trim();
-
-          if (!text) return;
-
-          // detect sender
-          let sender = "Unknown";
-          const senderSpan = row.querySelector("span");
-          const senderText = senderSpan?.innerText?.trim() || "";
-          if (senderText.includes("You sent") || senderText.includes("You:")) {
-            sender = "You";
-          } else {
-            sender = chatPartner;
-          }
-
-          // timestamp
-          let timestamp = null;
-          const timeSelectors = ["h4 span", "abbr[aria-label]", "[title*='at']", "time"];
-          for (const selector of timeSelectors) {
-            const timeEl = row.querySelector(selector);
-            if (timeEl) {
-              timestamp =
-                timeEl.innerText ||
-                timeEl.getAttribute("aria-label") ||
-                timeEl.getAttribute("title");
-              break;
-            }
-          }
-          if (timestamp) lastSeenTimestamp = timestamp;
-          else timestamp = lastSeenTimestamp || "";
-
-          extracted.push({
-            sender,
-            text,
-            timestamp,
-            messageIndex: index
-          });
-        });
-
-        return extracted;
-      },
-      chatUrl.includes("facebook") ? "Partner" : "Unknown",
-      lastMessageIndex
-    );
-
-    return {
-      success: true,
-      chatUrl,
-      newMessages
-    };
-  } catch (err) {
-    console.error("Error in scrapeNewMessages:", err.message);
-    return { success: false, error: err.message };
-  } finally {
-    if (browser) await browser.close();
-  }
-}
-
-export async function scrapeSingleMarketplaceChat(accountId, chatUrl) {
-  let browser;
-
-  try {
-    // Load account + cookies
-    const account = await getFacebookAccountById(accountId);
-    if (!account || !account.session_cookies) {
-      throw new Error("Account or cookies not found");
-    }
-
-    const cookies = JSON.parse(account.session_cookies);
-
-    browser = await puppeteer.launch({
-      headless: false,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-blink-features=AutomationControlled",
-        "--disable-features=VizDisplayCompositor"
-      ],
-      defaultViewport: { width: 1366, height: 768 }
-    });
-
-    const page = await browser.newPage();
-
-    await page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    );
-
-    await browser.setCookie(...cookies);
-
-    console.log(`Navigating to chat: ${chatUrl}`);
-
-    await page.goto(chatUrl, {
-      waitUntil: "networkidle2",
-      timeout: 30000
-    });
-
-    await page.waitForFunction(() => {
-      return document.querySelector('div[role="main"]') &&
-        document.querySelectorAll('div[role="row"]').length > 0;
-    }, { timeout: 15000 });
-
-    let chatPartner = await page.evaluate(() => {
-      const target = Array.from(document.querySelectorAll('[aria-label]')).find(el =>
-        el.getAttribute('aria-label').toLowerCase().includes('conversation')
-      );
-      return target ? target.querySelector('h2')?.textContent || null : null;
-    });
-
-    console.log(`Scraping conversation with: ${chatPartner}`);
-    if (!chatPartner || !chatPartner.includes("·")) {
-      throw new Error("Not a valid conversation");
-    }
-
-    const messages = await page.evaluate(async (chatPartner) => {
-      function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-      }
-
-      try {
-        const conversationContainer = document.querySelector('div[aria-label*="Messages in conversation titled"]');
-        if (conversationContainer) {
-          const scrollContainers = conversationContainer.querySelectorAll('.x78zum5');
-
-          for (const container of scrollContainers) {
-            let attempts = 0;
-            while (attempts < 20) {
-              const rows = Array.from(conversationContainer.querySelectorAll('div[role="row"]'));
-              const hasBuyerProfile = rows.some(r => r.textContent.includes("View buyer profile"));
-
-              if (hasBuyerProfile) break;
-
-              container.scrollBy(0, -1200);
-              await sleep(2000);
-              attempts++;
-            }
-          }
-        }
-
-        const rows = document.querySelectorAll("div[role='row']");
-        let lastSeenTimestamp = null;
-        const extractedMessages = [];
-        let test = [];
-        rows.forEach((row, index) => {
-          try {
-            if (!row.querySelector('div[dir="auto"]') && !row.textContent.trim()) return;
-
-            let sender = "Unknown";
-            const senderSpan = row.querySelector("span");
-            const senderText = senderSpan?.innerText?.trim() || "";
-            test.push(senderText);
-            if (senderText.includes("You sent") || senderText.includes("You:")) {
-              sender = "You";
-            } else if (row.closest('[data-testid*="outgoing"]') ||
-              row.querySelector('[aria-label*="You sent"]')) {
-              sender = "You";
-            } else {
-              sender = chatPartner;
-            }
-
-            const textElements = Array.from(row.querySelectorAll("div[dir='auto']"));
-            const text = textElements
-              .map(div => div.innerText?.trim() || "")
-              .filter(t => t.length > 0 &&
-                !t.includes("Rate") &&
-                !t.includes("Message sent") &&
-                !t.includes("Delivered") &&
-                !t.includes("Seen"))
-              .join(" ")
-              .trim();
-
-            let timestamp = null;
-            const timeSelectors = [
-              "h4 span",
-              "abbr[aria-label]",
-              "[title*='at']",
-              "time",
-              "[aria-label*='at']"
-            ];
-
-            for (const selector of timeSelectors) {
-              const timeEl = row.querySelector(selector);
-              if (timeEl) {
-                timestamp = timeEl.innerText ||
-                  timeEl.getAttribute("aria-label") ||
-                  timeEl.getAttribute("title");
-                if (timestamp) break;
-              }
-            }
-
-            if (timestamp) {
-              lastSeenTimestamp = timestamp;
-            } else {
-              timestamp = lastSeenTimestamp;
-            }
-
-            if (!timestamp.includes(":")) {
-              timestamp = "";
-            }
-
-            if (text && text.length > 0) {
-              extractedMessages.push({
-                sender,
-                text,
-                timestamp,
-                messageIndex: index
-              });
-            }
-          } catch (rowError) {
-            console.error(`Error processing message row ${index}:`, rowError);
-          }
-        });
-        console.log(test);
-        console.log(extractedMessages)
-        return extractedMessages;
-      } catch (error) {
-        console.error("Error in message extraction:", error);
-        return [];
-      }
-    }, chatPartner);
-
-    console.log(`Extracted ${messages.length} messages from conversation with ${chatPartner}`);
-
-    const result = {
-      success: true,
-      chatUrl,
-      chatPartner,
-      totalMessages: messages.length,
-      messages,
-      scrapedAt: new Date().toISOString()
-    };
-
-    await saveScrapedData([result]); // Saving as array for compatibility
-    return result;
-
-  } catch (error) {
-    console.error("Single chat scraping error:", error.message);
-
-    try {
-      await updateFacebookAccount(accountId, {
-        login_status: "error",
-        last_error: error.message,
-        last_scraped: new Date().toISOString()
-      });
-    } catch (updateError) {
-      console.error("Failed to update account status:", updateError.message);
-    }
-
-    return {
-      success: false,
-      error: error.message
-    };
-  } finally {
-    if (browser) {
-      try {
-        await browser.close();
-        console.log("Browser closed successfully");
-      } catch (closeError) {
-        console.error("Error closing browser:", closeError.message);
-      }
-    }
-  }
-}
-
-export async function scrapeMarketplaceMessagesTestt(accountId, options = {}, Findtext = "345543443434", timeStamp = "1755865680000", indexNumber = "33") {
-  const { maxConversations = 10, delayBetweenChats = 2000 } = options;
-  let browser;
-
-  try {
-    // 1. Load account + cookies
-    const account = await getFacebookAccountById(accountId);
-    if (!account || !account.session_cookies) {
-      throw new Error("Account or cookies not found");
-    }
-
-    const cookies = JSON.parse(account.session_cookies);
-
-    // 2. Launch Puppeteer with better stealth settings
-    browser = await puppeteer.launch({
-      headless: false,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-blink-features=AutomationControlled",
-        "--disable-features=VizDisplayCompositor"
-      ],
-      defaultViewport: { width: 1366, height: 768 }
-    });
-
-    const page = await browser.newPage();
-
-    // Set user agent to avoid detection
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-
-    // Set cookies
-    await browser.setCookie(...cookies);
-
-    // 3. Navigate to Facebook Messages
-    console.log("Navigating to Facebook Messages...");
-    // await page.goto("https://www.facebook.com/messages", {
-    //   waitUntil: "networkidle2",
-    //   timeout: 30000
-    // });
-    console.log("Page loaded, waiting for chat interface...");
-    const chatUrls = await getChatUrls(accountId);
-    const parsedUrls = JSON.parse(chatUrls[0].url);
-    const chatList = parsedUrls.map(entry => entry.chatUrl);
-
-    //  return chatList
-
-    if (chatList.length === 0) {
-      throw new Error("No chat conversations found. The page structure might have changed.");
-    }
-
-    console.log(`Found ${chatList.length} conversation(s)`);
-    // return;
-    // 5. Process conversations with limits and error handling
-    const scrapedData = [];
-    const conversationsToProcess = Math.min(chatList.length, maxConversations);
-
-    for (let i = 0; i < conversationsToProcess; i++) {
-
-      try {
-        const chatUrl = chatList[i];
-        console.log(`Processing conversation ${i + 1}/${conversationsToProcess}`);
-
-        // Navigate to individual chat
-        await page.goto(chatUrl, {
-          waitUntil: "networkidle2",
-          timeout: 30000
-        });
-
-        // Wait for chat to load
-        await page.waitForFunction(() => {
-          return document.querySelector('div[role="main"]') &&
-            document.querySelectorAll('div[role="row"]').length > 0;
-        }, { timeout: 15000 });
-
-
-        let chatPartner = await page.evaluate(() => {
-          const target = Array.from(document.querySelectorAll('[aria-label]')).find(el =>
-            el.getAttribute('aria-label').toLowerCase().includes('conversation')
-          );
-          return target ? target.querySelector('h2')?.textContent || null : null;
-        });
-
-        console.log(`Scraping conversation with: ${chatPartner}`);
-        if (!chatPartner.includes('·')) {
-          console.log('Not a valid conversation');
-          continue
-        }
-
-
-        const messages = await page.evaluate(async (chatPartner, Findtext, indexNumber = 32) => {
-          function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-          }
-
-          try {
-            // 🔹 Step 1: Scroll until "View buyer profile"
-            const conversationContainer = document.querySelector('div[aria-label*="Messages in conversation titled"]');
-            if (conversationContainer) {
-              const scrollContainers = conversationContainer.querySelectorAll('.x78zum5');
-
-              for (const container of scrollContainers) {
-                let attempts = 0;
-                while (attempts < 20) { // prevent infinite loop
-                  const rows = Array.from(conversationContainer.querySelectorAll('div[role="row"]'));
-                  const hasBuyerProfile = rows.some(r => r.textContent.includes('View buyer profile') || r.textContent.includes(Findtext));
-
-                  if (hasBuyerProfile) {
-                    console.log("Reached 'View buyer profile'");
-                    break;
-                  }
-
-                  container.scrollBy(0, -1400); // scroll upward
-                  await sleep(2000); // wait for more messages to load
-                  attempts++;
-                }
-              }
-            }
-
-            // 🔹 Step 2: Extract messages
-            const rows = document.querySelectorAll("div[role='row']");
-            let lastSeenTimestamp = null;
-            let messageCounter = indexNumber;  // Start from given indexNumber
-
-            let extractedMessages = [];
-
-            rows.forEach((row) => {
-              try {
-                console.log("Raw row text:", row.textContent);
-
-                if (!row.querySelector('div[dir="auto"]') && !row.textContent.trim()) return;
-                // Detect sender
-                let sender = "Unknown";
-                const senderSpan = row.querySelector("span");
-                const senderText = senderSpan?.innerText?.trim() || "";
-                if (senderText.includes("You sent") || senderText.includes("You:")) {
-                  sender = "You";
-                } else if (row.closest('[data-testid*="outgoing"]') ||
-                  row.querySelector('[aria-label*="You sent"]')) {
-                  sender = "You";
-                } else {
-                  sender = chatPartner;
-                }
-
-                // Extract text
-                const textElements = Array.from(row.querySelectorAll("div[dir='auto']"));
-                const text = textElements
-                  .map(div => div.innerText?.trim() || "")
-                  .filter(t => t.length > 0 &&
-                    !t.includes("Rate") &&
-                    !t.includes("Message sent") &&
-                    !t.includes("Delivered") &&
-                    !t.includes("Seen"))
-                  .join(" ")
-                  .trim();
-
-                // Extract timestamp
-                let timestamp = null;
-                const timeSelectors = [
-                  "h4 span",
-                  "abbr[aria-label]",
-                  "[title*='at']",
-                  "time",
-                  "[aria-label*='at']"
-                ];
-
-                for (const selector of timeSelectors) {
-                  const timeEl = row.querySelector(selector);
-                  if (timeEl) {
-                    timestamp = timeEl.innerText ||
-                      timeEl.getAttribute("aria-label") ||
-                      timeEl.getAttribute("title");
-                    if (timestamp) break;
-                  }
-                }
-
-                if (timestamp) {
-                  lastSeenTimestamp = timestamp;
-                } else {
-                  timestamp = lastSeenTimestamp;
-                }
-                if (!timestamp.includes(":")) {
-                  timestamp = "";
-                }
-                // convertToTimestamp(timestamp)
-                console.log(`timestamp is: ${timestamp}`)
-                if (text && text.length > 0) {
-                  messageCounter++;
-                  extractedMessages.push({
-                    sender,
-                    text,
-                    timestamp,
-                    messageIndex: messageCounter
-                  });
-                }
-              } catch (rowError) {
-                console.error(`Error processing message row ${index}:`, rowError);
-              }
-            });
-            console.log(extractedMessages)
-            return extractedMessages;
-          } catch (error) {
-            console.error("Error in message extraction:", error);
-            return [];
-          }
-        }, chatPartner, Findtext, indexNumber);
-
-
-
-        console.log(`Extracted ${messages.length} messages from conversation with ${chatPartner}`);
-
-        // Store conversation data
-        scrapedData.push({
-          chatUrl,
-          chatPartner,
-          messages,
-          totalMessages: messages.length,
-          scrapedAt: new Date().toISOString()
-        });
-
-        // Add delay between conversations to avoid rate limiting
-        if (i < conversationsToProcess - 1) {
-          console.log(`Waiting ${delayBetweenChats}ms before next conversation...`);
-          await new Promise(resolve => setTimeout(resolve, delayBetweenChats));
-        }
-
-      } catch (conversationError) {
-        console.error(`Error processing conversation ${i + 1}:`, conversationError.message);
-        // Continue with next conversation instead of failing completely
-        continue;
-      }
-    }
-
-    console.log("Scraping completed successfully");
-
-
-    // await saveScrapedData(scrapedData);
-    // return  scrapedData;
-    return {
-      success: true,
-      totalConversations: chatList.length,
-      processedConversations: scrapedData.length,
-      data: scrapedData,
-      summary: {
-        totalMessages: scrapedData.reduce((sum, conv) => sum + conv.totalMessages, 0),
-        conversationPartners: scrapedData.map(conv => conv.chatPartner)
-      }
-    };
-
-  } catch (error) {
-    console.error("Scraping error:", error.message);
-
-    // // // Update account with error status
-    // try {
-    //   await updateFacebookAccount(accountId, { 
-    //     login_status: "error",
-    //     last_error: error.message,
-    //     last_scraped: new Date().toISOString()
-    //   });
-    // } catch (updateError) {
-    //   console.error("Failed to update account status:", updateError.message);
-    // }
-
-    // return {
-    //   success: false,
-    //   error: error.message,
-    //   // partialData: scrapedData.length > 0 ? scrapedData : undefined
-    // };
-  } finally {
-    if (browser) {
-      try {
-        await browser.close();
-        console.log("Browser closed successfully");
-      } catch (closeError) {
-        console.error("Error closing browser:", closeError.message);
-      }
-    }
-  }
-}
-
-
-
-
 
 //////////////// crafting functions
 
-async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber = 0, isRecursive = false) {
-  return await page.evaluate(async (chatPartner, Findtext, indexNumber) => {
+async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber = 0, isRecursive = true) {
+  return await page.evaluate(async (chatPartner, Findtext, indexNumber,isRecursive) => {
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
     } 
     function getLatestMesssage() {
-      let array = [];
+      let arr = [];
       let text = document.querySelector('div[aria-label*="Messages in conversation titled"]')
         .querySelectorAll('div[role="row"]')
         .forEach((e) => { arr.push(e) });
@@ -1611,15 +1025,14 @@ async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber 
     }
     if (isRecursive) {
       const latestMessage = getLatestMesssage();
-      if (latestMessage[1].includes(Findtext)) {
-        return [];
+      if (latestMessage[1].includes(Findtext) && Findtext !==null) {
+        return {data:"stop"};
       }
     }
     try {
       const conversationContainer = document.querySelector('div[aria-label*="Messages in conversation titled"]');
       if (conversationContainer) {
         const scrollContainers = conversationContainer.querySelectorAll('.x78zum5');
-
         for (const container of scrollContainers) {
           let attempts = 0;
           while (attempts < 20) { // prevent infinite loop
@@ -1714,236 +1127,18 @@ async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber 
           console.error(`Error processing message row ${index}:`, rowError);
         }
       });
-      // console.log(extractedMessages)
+      console.log(extractedMessages)
       return extractedMessages;
     } catch (error) {
       console.error("Error in message extraction:", error);
       return [];
     }
-  }, chatPartner, Findtext, indexNumber);
+  }, chatPartner, Findtext, indexNumber,isRecursive);
 }
 
-export async function scrapeMarketplaceMessagesTest(accountId, chatUrls = [], Findtext = "345543443434", timeStamp = "", indexNumber = '') {
-  // const { maxConversations = 10, delayBetweenChats = 2000 } = options;
-  const maxConversations = 1;
-  const delayBetweenChats = 2000;
-  let browser;
 
-  try {
-    // 1. Load account + cookies
-    const account = await getFacebookAccountById(accountId);
-    if (!account || !account.session_cookies) {
-      throw new Error("Account or cookies not found");
-    }
-    const cookies = JSON.parse(account.session_cookies);
-    // 2. Launch Puppeteer with better stealth settings
-    browser = await puppeteer.launch({
-      headless: false,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-blink-features=AutomationControlled",
-        "--disable-features=VizDisplayCompositor"
-      ],
-      defaultViewport: { width: 1366, height: 768 }
-    });
-    const page = await browser.newPage();
-    // Set user agent to avoid detection
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-    // Set cookies
-    await browser.setCookie(...cookies);
-    //   Process conversations with limits and error handling
-    const scrapedData = [];
-    try {
-      // Navigate to individual chat
-      await page.goto(chatUrl, {
-        waitUntil: "networkidle2",
-        timeout: 30000
-      });
-      // Wait for chat to load
-      await page.waitForFunction(() => {
-        return document.querySelector('div[role="main"]') &&
-          document.querySelectorAll('div[role="row"]').length > 0;
-      }, { timeout: 15000 });
-      // get chat partner
-      let chatPartner = await page.evaluate(() => {
-        const target = Array.from(document.querySelectorAll('[aria-label]')).find(el =>
-          el.getAttribute('aria-label').toLowerCase().includes('conversation')
-        );
-        return target ? target.querySelector('h2')?.textContent || null : null;
-      });
-
-      console.log(`Scraping conversation with: ${chatPartner}`);
-      if (!chatPartner.includes('·')) {
-        console.log('Not a valid conversation');
-        return {
-          success: false,
-          totalConversations: 0,
-          processedConversations: 0,
-          data: [],
-          summary: {
-            totalMessages: 0,
-            conversationPartners: []
-          }
-        };
-      }
-
-
-      // const messages = await page.evaluate(async (chatPartner, Findtext, indexNumber = 32) => {
-
-      //   try {
-      //     scrollToTarget(Findtext);
-      //     // 🔹 Step 2: Extract messages
-      //     const rows = document.querySelectorAll("div[role='row']");
-      //     let lastSeenTimestamp = null;
-      //     let messageCounter = indexNumber;  // Start from given indexNumber
-
-      //     let extractedMessages = [];
-
-      //     rows.forEach((row) => {
-      //       try {
-      //         console.log("Raw row text:", row.textContent);
-
-      //         if (!row.querySelector('div[dir="auto"]') && !row.textContent.trim()) return;
-      //         // Detect sender
-      //         let sender = "Unknown";
-      //         const senderSpan = row.querySelector("span");
-      //         const senderText = senderSpan?.innerText?.trim() || "";
-      //         if (senderText.includes("You sent") || senderText.includes("You:")) {
-      //           sender = "You";
-      //         } else if (row.closest('[data-testid*="outgoing"]') ||
-      //           row.querySelector('[aria-label*="You sent"]')) {
-      //           sender = "You";
-      //         } else {
-      //           sender = chatPartner;
-      //         }
-
-      //         // Extract text
-      //         const textElements = Array.from(row.querySelectorAll("div[dir='auto']"));
-      //         const text = textElements
-      //           .map(div => div.innerText?.trim() || "")
-      //           .filter(t => t.length > 0 &&
-      //             !t.includes("Rate") &&
-      //             !t.includes("Message sent") &&
-      //             !t.includes("Delivered") &&
-      //             !t.includes("Seen"))
-      //           .join(" ")
-      //           .trim();
-
-      //         // Extract timestamp
-      //         let timestamp = null;
-      //         const timeSelectors = [
-      //           "h4 span",
-      //           "abbr[aria-label]",
-      //           "[title*='at']",
-      //           "time",
-      //           "[aria-label*='at']"
-      //         ];
-
-      //         for (const selector of timeSelectors) {
-      //           const timeEl = row.querySelector(selector);
-      //           if (timeEl) {
-      //             timestamp = timeEl.innerText ||
-      //               timeEl.getAttribute("aria-label") ||
-      //               timeEl.getAttribute("title");
-      //             if (timestamp) break;
-      //           }
-      //         }
-
-      //         if (timestamp) {
-      //           lastSeenTimestamp = timestamp;
-      //         } else {
-      //           timestamp = lastSeenTimestamp;
-      //         }
-      //         if (!timestamp.includes(":")) {
-      //           timestamp = "";
-      //         }
-      //         // convertToTimestamp(timestamp)
-      //         console.log(`timestamp is: ${timestamp}`)
-      //         if (text && text.length > 0) {
-      //           messageCounter++;
-      //           extractedMessages.push({
-      //             sender,
-      //             text,
-      //             timestamp,
-      //             messageIndex: messageCounter
-      //           });
-      //         }
-      //       } catch (rowError) {
-      //         console.error(`Error processing message row ${index}:`, rowError);
-      //       }
-      //     });
-      //     console.log(extractedMessages)
-      //     return extractedMessages;
-      //   } catch (error) {
-      //     console.error("Error in message extraction:", error);
-      //     return [];
-      //   }
-      // }, chatPartner, Findtext, indexNumber);
-
-      const getmessages = await extractMessagesFromPage(page, chatPartner, Findtext, 50);
-      const messages = filterMessagesAfterFindText(getmessages, Findtext);
-      console.log(`Extracted ${messages.length} messages from conversation with ${chatPartner}`);
-
-      // Store conversation data
-      scrapedData.push({
-        chatUrl,
-        chatPartner,
-        messages,
-        // totalMessages: messages.length,
-        scrapedAt: new Date().toISOString()
-      });
-
-    } catch (conversationError) {
-      console.error(`Error processing conversation :`, conversationError.message);
-      // Continue with next conversation instead of failing completely
-    }
-    console.log("Scraping completed successfully");
-    // await saveScrapedData(scrapedData);
-    // return  scrapedData;
-    return {
-      success: true,
-      // totalConversations: chatList.length,
-      processedConversations: scrapedData.length,
-      data: scrapedData,
-      summary: {
-        totalMessages: scrapedData.reduce((sum, conv) => sum + conv.totalMessages, 0),
-        conversationPartners: scrapedData.map(conv => conv.chatPartner)
-      }
-    };
-
-  } catch (error) {
-    console.error("Scraping error:", error.message);
-
-    // // // Update account with error status
-    // try {
-    //   await updateFacebookAccount(accountId, { 
-    //     login_status: "error",
-    //     last_error: error.message,
-    //     last_scraped: new Date().toISOString()
-    //   });
-    // } catch (updateError) {
-    //   console.error("Failed to update account status:", updateError.message);
-    // }
-
-    // return {
-    //   success: false,
-    //   error: error.message,
-    //   // partialData: scrapedData.length > 0 ? scrapedData : undefined
-    // };
-  } finally {
-    if (browser) {
-      try {
-        // await browser.close();
-        console.log("Browser closed successfully");
-      } catch (closeError) {
-        console.error("Error closing browser:", closeError.message);
-      }
-    }
-  }
-}
 // export async function scrapeChat(accountId, chatUrls = [], Findtext = "345543443434", timeStamp = "", indexNumber = '') {
-export async function scrapeChat(accountId, chatUrls = [], Findtext,  indexNumber = 0, isRecursive = false) {
+export async function scrapeChat(accountId, chatUrls = [], Findtext,  indexNumber = 0, isRecursive = true) {
 
   // const { maxConversations = 10, delayBetweenChats = 2000 } = options;
   const maxConversations = 1;
@@ -1981,6 +1176,13 @@ export async function scrapeChat(accountId, chatUrls = [], Findtext,  indexNumbe
     try {
       // Navigate to individual chat
       for (let chatUrl of chatUrls) {
+          if(isRecursive){
+          const conversation=await getConversationByUrl(chatUrl);
+          const getLastMessage=await axios.get(`http://localhost:3000/api/messages/last/${conversation.id}`).then(res => res.data.lastMessage).catch(err => console.error(err));;
+          // const getLastMessage=await axios.get('https://fb-g-h-l-integration.onrender.com/api/messages/lastmessage').then(res => console.log(res.data)).catch(err => console.error(err));;
+          Findtext=getLastMessage?.text || null;           
+          indexNumber=getLastMessage?.message_index || 0;
+        }
         console.log(`Navigating to chat: ${chatUrl}`);
         await page.goto(chatUrl, {
           waitUntil: "networkidle2",
@@ -2014,14 +1216,14 @@ export async function scrapeChat(accountId, chatUrls = [], Findtext,  indexNumbe
             }
           };
         }
-        if(isRecursive){
-          const conversation=await getConversationByUrl(chatUrl);
-          const getLastMessage=await getLastMessage(conversation.id);
-          Findtext=getLastMessage.text;
-          indexNumber=getLastMessage.message_index;
-        }
+      
         const getmessages = await extractMessagesFromPage(page, chatPartner, Findtext, indexNumber, isRecursive);
+        if(isRecursive && getmessages.data=="stop"){
+          continue
+        }
+        console.log(`find text is:::-----${Findtext}`)
         const messages = filterMessagesAfterFindText(getmessages, Findtext);
+        
         console.log(`Extracted ${messages.length} messages from conversation with ${chatPartner}`);
 
         // Store conversation data
@@ -2029,9 +1231,10 @@ export async function scrapeChat(accountId, chatUrls = [], Findtext,  indexNumbe
           chatUrl,
           chatPartner,
           messages,
-          // totalMessages: messages.length,
+          totalMessages: messages.length,
           scrapedAt: new Date().toISOString()
         });
+
       }
     } catch (conversationError) {
       console.error(`Error processing conversation :`, conversationError.message);
@@ -2055,15 +1258,15 @@ export async function scrapeChat(accountId, chatUrls = [], Findtext,  indexNumbe
     console.error("Scraping error:", error.message);
 
     // // Update account with error status
-    try {
-      await updateFacebookAccount(accountId, {
-        login_status: "error",
-        last_error: error.message,
-        last_scraped: new Date().toISOString()
-      });
-    } catch (updateError) {
-      console.error("Failed to update account status:", updateError.message);
-    }
+    // try {
+    //   await updateFacebookAccount(accountId, {
+    //     login_status: "error",
+    //     last_error: error.message,
+    //     last_scraped: new Date().toISOString()
+    //   });
+    // } catch (updateError) {
+    //   console.error("Failed to update account status:", updateError.message);
+    // }
 
     return {
       success: false,
@@ -2073,7 +1276,7 @@ export async function scrapeChat(accountId, chatUrls = [], Findtext,  indexNumbe
   } finally {
     if (browser) {
       try {
-        // await browser.close();
+        await browser.close();
         console.log("Browser closed successfully");
       } catch (closeError) {
         console.error("Error closing browser:", closeError.message);
@@ -2088,10 +1291,16 @@ export async function scrapeAllChats(accountId) {
     throw new Error("Account ID is required");
   }
   const chatList = await getChatUrls(accountId);
+  console.log(chatList);
   if (!chatList || chatList.length === 0) {
     throw new Error("Chat urls not found");
   }
-  return await scrapeChat(accountId, chatList);
+  let data=await scrapeChat(accountId, chatList,null,0,true);
+  // console.log(data.summary.totalMessages);
+  while(!data.summary.totalMessages==0){
+    data= await scrapeChat(accountId, chatList,null,0,true);
+  }
+  return data;
 }
 
 export async function scrapeSingleChat(accountId, conversationId, chatUrls) {
@@ -2108,7 +1317,13 @@ export async function scrapeSingleChat(accountId, conversationId, chatUrls) {
 
 
 export async function recursiveScrape(accountId) {
-
+  if (!accountId) {
+    throw new Error("Account ID is required");
+  }
+   if (!chatList || chatList.length === 0) {
+    throw new Error("Chat urls not found");
+  }
+  
 }
 
 
@@ -2117,6 +1332,10 @@ export async function recursiveScrape(accountId) {
 
 function filterMessagesAfterFindText(messages, findText) {
   // Find the index of the message containing findText
+
+  if(findText==null){
+    return messages
+  }
   const index = messages.findIndex(msg => msg.text.includes(findText));
   if (index === -1) {
     // Findtext not found, return all messages or empty array if you want only new ones
@@ -2128,7 +1347,7 @@ function filterMessagesAfterFindText(messages, findText) {
 
 
 function getLatestMesssage() {
-  let array = [];
+  let arr = [];
   let text = document.querySelector('div[aria-label*="Messages in conversation titled"]')
     .querySelectorAll('div[role="row"]')
     .forEach((e) => { arr.push(e) });
