@@ -7,10 +7,10 @@ import { updateFacebookAccount } from "../models/FacebookAccount.js";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { Keyboard, timeout } from "puppeteer";
-import { loginFacebookAccount } from "./puppeteerLogin.js";
 import { convertToTimestamp } from "../utils/helpers.js";
+import dotenv from "dotenv";
 import axios from "axios";
-
+dotenv.config();
 puppeteer.use(StealthPlugin());
 
 
@@ -1010,7 +1010,7 @@ export async function sendMessage(accountId, options = {}) {
 
 //////////////// crafting functions
 
-async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber = 0, isRecursive = true) {
+async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber = 0, isRecursive = false) {
   return await page.evaluate(async (chatPartner, Findtext, indexNumber,isRecursive) => {
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
@@ -1023,11 +1023,11 @@ async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber 
       let response = arr[arr.length - 1].innerText.split('\n');
       return response
     }
-    if (isRecursive) {
+    // if (isRecursive) {
       const latestMessage = getLatestMesssage();
       if (latestMessage[1].includes(Findtext) && Findtext !==null) {
         return {data:"stop"};
-      }
+      // }
     }
     try {
       const conversationContainer = document.querySelector('div[aria-label*="Messages in conversation titled"]');
@@ -1138,13 +1138,14 @@ async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber 
 
 
 // export async function scrapeChat(accountId, chatUrls = [], Findtext = "345543443434", timeStamp = "", indexNumber = '') {
-export async function scrapeChat(accountId, chatUrls = [], Findtext,  indexNumber = 0, isRecursive = true) {
+export async function scrapeChat(accountId, chatUrls = [], isRecursive = false) {
 
   // const { maxConversations = 10, delayBetweenChats = 2000 } = options;
   const maxConversations = 1;
   const delayBetweenChats = 2000;
   let browser;
-
+  let Findtext=null;
+  let indexNumber=0;
   try {
     // 1. Load account + cookies
     const account = await getFacebookAccountById(accountId);
@@ -1176,13 +1177,13 @@ export async function scrapeChat(accountId, chatUrls = [], Findtext,  indexNumbe
     try {
       // Navigate to individual chat
       for (let chatUrl of chatUrls) {
-          if(isRecursive){
+          // if(isRecursive){
           const conversation=await getConversationByUrl(chatUrl);
-          const getLastMessage=await axios.get(`http://localhost:3000/api/messages/last/${conversation.id}`).then(res => res.data.lastMessage).catch(err => console.error(err));;
+          const getLastMessage=await axios.get(`${process.env.BASE_URL}/api/messages/last/${conversation.id}`).then(res => res.data.lastMessage).catch(err => console.error(err));;
           // const getLastMessage=await axios.get('https://fb-g-h-l-integration.onrender.com/api/messages/lastmessage').then(res => console.log(res.data)).catch(err => console.error(err));;
           Findtext=getLastMessage?.text || null;           
           indexNumber=getLastMessage?.message_index || 0;
-        }
+        // }
         console.log(`Navigating to chat: ${chatUrl}`);
         await page.goto(chatUrl, {
           waitUntil: "networkidle2",
@@ -1295,24 +1296,25 @@ export async function scrapeAllChats(accountId) {
   if (!chatList || chatList.length === 0) {
     throw new Error("Chat urls not found");
   }
-  let data=await scrapeChat(accountId, chatList,null,0,true);
+  let data=await scrapeChat(accountId, chatList,true);
   // console.log(data.summary.totalMessages);
   while(!data.summary.totalMessages==0){
-    data= await scrapeChat(accountId, chatList,null,0,true);
+    data= await scrapeChat(accountId, chatList,true);
   }
   return data;
 }
 
-export async function scrapeSingleChat(accountId, conversationId, chatUrls) {
+export async function scrapeSingleChat(accountId, chatUrls) {
   if (!accountId) {
     throw new Error("Account ID is required");
   }
   if (!chatUrls || chatUrls.length === 0) {
     throw new Error("Chat urls is required");
   }
-  const Findtext = await getLastMessage(conversationId);
-  return Findtext;
-  // return await scrapeChat(accountId, chatUrls, Findtext, index);
+
+  // const Findtext = await getLastMessage(conversationId);
+  // return Findtext;
+  return await scrapeChat(accountId, chatUrls,null , 0, true);
 }
 
 

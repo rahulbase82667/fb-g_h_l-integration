@@ -61,11 +61,11 @@ app.get('/health', async (req, res) => {
 });
 app.get('/test-scraper', async (req, res) => {
   try {
-    // const data = await scrapeNewMessages(1,'https://www.facebook.com/messages/t/742182578820330');
+    const data = await scrapeSingleChat(1,['https://www.facebook.com/messages/t/742182578820330'],2);
     // const data = await sendMessage(1);
     // const data = await scrapeMarketplaceMessagesTest(1);
     // const data = await scrapeAllChats(1);
-    const data = await scrapeAllChats(1);
+    // const data = await scrapeAllChats(1);
     // const data = await scrapeChatList(1);
     res.json(data);
   } catch (error) {

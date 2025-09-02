@@ -95,6 +95,8 @@ export async function loginFacebookAccount(accountId) {
     else {
       // 6. Perform login
       console.log("  Session valid, no login needed");
+    return { success: true, accountId: account.id ,message: "Facebook account is already Logged." };
+      
     }
     // return false;
     // 7. Save cookies
@@ -107,7 +109,7 @@ export async function loginFacebookAccount(accountId) {
 
     console.log("  Session cookies updated in DB");
 
-    return { success: true, accountId: account.id };
+    return { success: true, accountId: account.id ,message: "Facebook account Logged in and cookies stored succsfully." };
 
   } catch (error) {
     console.error("Login error:", error.message);

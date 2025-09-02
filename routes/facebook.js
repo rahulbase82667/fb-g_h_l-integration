@@ -43,6 +43,12 @@ router.get('/login/:id',(async (req, res) => {
   const result = await loginFacebookAccount(accountId); // test with account ID 1
   
   console.log(result);
+  res.json( {
+    success: result.success,
+    accountId: result.accountId,
+    message: result.message,
+    error: result.error
+  });
 }));
 // Update account
 router.put("/:id", async (req, res) => {
