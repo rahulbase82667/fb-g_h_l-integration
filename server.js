@@ -8,7 +8,7 @@ import authRoutes from './routes/auth.js';
 import facebookRoutes from './routes/facebook.js';
 import ghlRoutes from './routes/ghl.js';
 import { getFacebookAccounts } from './models/FacebookAccount.js';
-import { test,scrapeChatList, sendMessage , scrapeSingleChat, scrapeChat,scrapeAllChats } from './services/scrapeMarketplaceMessages.js';
+import { scrapeChatList, sendMessage , scrapeSingleChat, scrapeChat,scrapeAllChats } from './services/scrapeMarketplaceMessages.js';
 import { getLastMessage } from './models/Message.js';
 import messageRouter from "./routes/message.js"; // adjust path if different
 dotenv.config();
@@ -21,7 +21,7 @@ app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? [`${process.env.ORIGIN_1}`]
+    ? [`${process.env.ORIGIN_1}`, 'http://localhost:3000', 'http://localhost:3001']
     : ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true
 }));
@@ -61,10 +61,10 @@ app.get('/health', async (req, res) => {
 });
 app.get('/test-scraper', async (req, res) => {
   try {
-    const data = await scrapeSingleChat(1,['https://www.facebook.com/messages/t/742182578820330'],2);
+    // const data = await scrapeSingleChat(1,['https://www.facebook.com/messages/t/742182578820330'],2);
     // const data = await sendMessage(1);
     // const data = await scrapeMarketplaceMessagesTest(1);
-    // const data = await scrapeAllChats(1);
+    const data = await scrapeAllChats(1);
     // const data = await scrapeAllChats(1);
     // const data = await scrapeChatList(1);
     res.json(data);
@@ -126,7 +126,7 @@ const startServer = async () => {
     // Test database connection
     const dbConnected = await testConnection();
     if (!dbConnected) {
-      console.error(' Cannot start server: Database connection failed');
+      console.error('Cannot start server: Database connection failed');
       process.exit(1);
     }
 
@@ -134,13 +134,12 @@ const startServer = async () => {
       console.log(` Server running on port ${port}`);
       console.log(`Environment: ${process.env.NODE_ENV}`);
       console.log(` Health check: http://localhost:${port}/health`);
-
       // Start the token refresh cron job 
       // startTokenRefreshJob();
     });
 
   } catch (error) {
-    console.error(' Server startup failed:', error.message);
+    console.error('Server startup failed:', error.message);
     process.exit(1);
   }
 };
