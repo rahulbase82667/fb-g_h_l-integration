@@ -19,10 +19,15 @@ app.set('trust proxy', 1);
 
 // Security middleware 
 app.use(helmet());
+//  uncomment it on production
+//app.use(cors({
+//   origin: process.env.NODE_ENV === 'production'
+//     ? [`${process.env.ORIGIN_1}`, 'http://localhost:3000', 'http://localhost:3001']
+//     : ['http://localhost:3000', 'http://localhost:3001'],
+//   credentials: true
+// }));
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? [`${process.env.ORIGIN_1}`, 'http://localhost:3000', 'http://localhost:3001']
-    : ['http://localhost:3000', 'http://localhost:3001'],
+  origin: '*',
   credentials: true
 }));
 
