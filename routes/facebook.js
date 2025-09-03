@@ -29,7 +29,7 @@ router.post("/add", async (req, res) => {
 });
 
 // List accounts
-router.get("/", async (req, res) => {
+router.get("/accounts", async (req, res) => {
   try {
     const accounts = await getFacebookAccounts();
     res.json({ success: true, accounts });
