@@ -26,10 +26,22 @@ app.use(helmet());
 //     : ['http://localhost:3000', 'http://localhost:3001'],
 //   credentials: true
 // }));
+// Use specific origins instead of '*'
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001']; // Add more if needed
+
 app.use(cors({
-  origin: '*',
+  origin: function (origin, callback) {
+    // Allow requests with no origin like curl or Postman
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
+
 
 // Rate limiting
 const limiter = rateLimit({
