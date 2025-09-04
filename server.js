@@ -27,7 +27,7 @@ app.use(helmet());
 //   credentials: true
 // }));
 // Use specific origins instead of '*'
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001']; // Add more if needed
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:3001']; // Add more if needed
 
 app.use(cors({
   origin: function (origin, callback) {
