@@ -144,4 +144,30 @@ export class User {
       throw new Error(`User listing failed: ${error.message}`);
     }
   }
+  static generateResetToken(userId, email) {
+  const payload = {
+    userId,
+    email,
+    type: 'password_reset'
+  };
+
+  return jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: '15m',
+    issuer: 'fb-ghl-integration',
+    audience: 'fb-ghl-users'
+  });
+}
+
+static verifyResetToken(token) {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.type !== 'password_reset') {
+      throw new Error('Invalid reset token');
+    }
+    return decoded;
+  } catch (err) {
+    throw new Error('Invalid or expired token');
+  }
+}
+
 }

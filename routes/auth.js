@@ -2,17 +2,18 @@ import express from 'express';
 import { User } from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { validate, registerSchema, loginSchema, changePasswordSchema } from '../utils/validation.js';
+import { sendResetEmail } from '../utils/email.js';
 
 const router = express.Router();
 
 // Register new user
 router.post('/register', validate(registerSchema), async (req, res) => {
   try {
-    const {name, email, password } = req.body;
+    const { name, email, password } = req.body;
     console.log(name);
     console.log(password)
     // const { email, password, role, reseller_id } = req.body;
-    
+
     // Check if user already exists
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
@@ -21,13 +22,13 @@ router.post('/register', validate(registerSchema), async (req, res) => {
         error: 'User with this email already exists'
       });
     }
-    
+
     // Create user
-    const user = await User.create({name, email, password, role: 'user' });
-    
+    const user = await User.create({ name, email, password, role: 'user' });
+
     // Generate token
-    const token = User.generateToken(user.id,user.name, user.email, user.role);
-    
+    const token = User.generateToken(user.id, user.name, user.email, user.role);
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
@@ -43,7 +44,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
         token
       }
     });
-    
+
   } catch (error) {
     console.error('Registration error:', error.message);
     res.status(500).json({
@@ -57,7 +58,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
 router.post('/login', validate(loginSchema), async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     // Find user
     const user = await User.findByEmail(email);
     if (!user) {
@@ -66,7 +67,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
         error: 'Invalid email or password'
       });
     }
-    
+
     // Validate password
     const isValidPassword = await User.validatePassword(password, user.password_hash);
     if (!isValidPassword) {
@@ -75,13 +76,13 @@ router.post('/login', validate(loginSchema), async (req, res) => {
         error: 'Invalid email or password'
       });
     }
-    
+
     // Update last login
     await User.updateLastLogin(user.id);
-    
+
     // Generate token
-    const token = User.generateToken(user.id,user.name, user.email, user.role);
-    
+    const token = User.generateToken(user.id, user.name, user.email, user.role);
+
     res.json({
       success: true,
       message: 'Login successful',
@@ -97,7 +98,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
         token
       }
     });
-    
+
   } catch (error) {
     console.error('Login error:', error.message);
     res.status(500).json({
@@ -111,27 +112,28 @@ router.post('/login', validate(loginSchema), async (req, res) => {
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
         error: 'User not found'
       });
     }
-    
+
     res.json({
       success: true,
       data: {
         user: {
           id: user.id,
+          name: user.name,
           email: user.email,
           role: user.role,
           reseller_id: user.reseller_id,
-          created_at: user.created_at 
+          created_at: user.created_at
         }
       }
     });
-    
+
   } catch (error) {
     console.error('Profile fetch error:', error.message);
     res.status(500).json({
@@ -145,7 +147,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
 router.post('/change-password', authenticateToken, validate(changePasswordSchema), async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    
+
     // Get user with password hash
     const user = await User.findByEmail(req.user.email);
     if (!user) {
@@ -154,7 +156,7 @@ router.post('/change-password', authenticateToken, validate(changePasswordSchema
         error: 'User not found'
       });
     }
-    
+
     // Validate current password
     const isValidPassword = await User.validatePassword(currentPassword, user.password_hash);
     if (!isValidPassword) {
@@ -163,15 +165,15 @@ router.post('/change-password', authenticateToken, validate(changePasswordSchema
         error: 'Current password is incorrect'
       });
     }
-    
+
     // Update password
     await User.updatePassword(req.user.id, newPassword);
-    
+
     res.json({
       success: true,
       message: 'Password changed successfully'
     });
-    
+
   } catch (error) {
     console.error('Password change error:', error.message);
     res.status(500).json({
@@ -199,6 +201,7 @@ router.get('/validate', authenticateToken, (req, res) => {
     data: {
       user: {
         id: req.user.id,
+        name: req.user.name,
         email: req.user.email,
         role: req.user.role,
         reseller_id: req.user.reseller_id
@@ -206,6 +209,43 @@ router.get('/validate', authenticateToken, (req, res) => {
     }
   });
 });
+
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findByEmail(email);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Email not found' });
+    }
+
+    const token = User.generateResetToken(user.id, user.email);
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+
+    await sendResetEmail(email, resetLink);
+
+    res.json({ success: true, message: 'Reset email sent successfully' });
+  } catch (error) {
+    console.error('Forgot password error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to send reset email' });
+  }
+});
+
+router.post('/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  try {
+    const decoded = User.verifyResetToken(token);
+
+    await User.updatePassword(decoded.userId, newPassword);
+
+    res.json({ success: true, message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error.message);
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 
 export default router;
 
