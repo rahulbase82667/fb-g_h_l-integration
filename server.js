@@ -27,16 +27,19 @@ app.use(helmet());
 //   credentials: true
 // }));
 // Use specific origins instead of '*'
-const allowedOrigins = ['http://localhost:5173',"https://rahulbase82667.github.io/"]; // Add more if needed
+const allowedOrigins = ['http://localhost:5173',"https://rahulbase82667.github.io/fb-ghl-front/"]; // Add more if needed
+
+
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin like curl or Postman
+    // Allow Postman / curl / non-browser tools with no origin
     if (!origin) return callback(null, true);
+
     if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
+      callback(null, true);
     } else {
-      return callback(new Error('Not allowed by CORS'));
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true
