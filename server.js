@@ -26,25 +26,10 @@ app.use(helmet());
 //     : ['http://localhost:3000', 'http://localhost:3001'],
 //   credentials: true
 // }));
-// Use specific origins instead of '*'
-const allowedOrigins = ['http://localhost:5173',"https://rahulbase82667.github.io/fb-ghl-front/"]; // Add more if needed
-
-
-
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow Postman / curl / non-browser tools with no origin
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: '*',
   credentials: true
 }));
-
 
 // Rate limiting
 const limiter = rateLimit({
