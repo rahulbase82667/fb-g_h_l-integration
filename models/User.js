@@ -5,7 +5,7 @@ import { query, transaction } from '../config/database.js';
 export class User {
   static async create(userData) {
     try {
-      const { email, password, role = 'user', reseller_id = null } = userData;
+      const {name, email, password, role = 'user', reseller_id = null } = userData;
       
       // Hash password
       const saltRounds = 12;
@@ -13,13 +13,13 @@ export class User {
       
       // Insert user
       const result = await query(
-        'INSERT INTO users (email, password_hash, role, reseller_id) VALUES (?, ?, ?, ?)',
-        [email, password_hash, role, reseller_id]
+        'INSERT INTO users (name,email, password_hash, role, reseller_id) VALUES (?, ?, ?, ?, ?)',
+        [name ,email, password_hash, role, reseller_id]
       );
       
       // Get created user
       const users = await query(
-        'SELECT id, email, role, reseller_id, created_at FROM users WHERE id = ?',
+        'SELECT id,name, email, role, reseller_id, created_at FROM users WHERE id = ?',
         [result.insertId]
       );
       
@@ -35,7 +35,7 @@ export class User {
   static async findByEmail(email) {
     try {
       const users = await query(
-        'SELECT id, email, password_hash, role, reseller_id, created_at FROM users WHERE email = ?',
+        'SELECT id,name, email, password_hash, role, reseller_id, created_at FROM users WHERE email = ?',
         [email]
       );
       
@@ -48,7 +48,7 @@ export class User {
   static async findById(id) {
     try {
       const users = await query(
-        'SELECT id, email, role, reseller_id, created_at FROM users WHERE id = ?',
+        'SELECT id,name, email, role, reseller_id, created_at FROM users WHERE id = ?',
         [id]
       );
       
@@ -127,7 +127,7 @@ export class User {
 
   static async list(limit = 50, offset = 0, reseller_id = null) {
     try {
-      let sql = 'SELECT id, email, role, reseller_id, created_at FROM users';
+      let sql = 'SELECT id,name, email, role, reseller_id, created_at FROM users';
       let params = [];
       
       if (reseller_id !== null) {

@@ -11,8 +11,12 @@ export const registerSchema = Joi.object({
       'any.required': 'Email is required',
       'string.max': 'Email cannot exceed 255 characters'
     }),
-    
-  password: Joi.string()
+  name: Joi.string().required().messages({
+    'any.required': 'Name is required'
+
+  }),
+
+  password: Joi.string()                 
     .min(8)
     .max(128)
     .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]'))
@@ -23,14 +27,14 @@ export const registerSchema = Joi.object({
       'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
       'any.required': 'Password is required'
     }),
-    
+
   role: Joi.string()
     .valid('user', 'admin', 'reseller')
     .default('user')
     .messages({
       'any.only': 'Role must be either user, admin, or reseller'
     }),
-    
+
   reseller_id: Joi.number()
     .integer()
     .positive()
@@ -47,7 +51,7 @@ export const loginSchema = Joi.object({
       'string.email': 'Please provide a valid email address',
       'any.required': 'Email is required'
     }),
-    
+
   password: Joi.string()
     .required()
     .messages({
@@ -62,7 +66,7 @@ export const changePasswordSchema = Joi.object({
     .messages({
       'any.required': 'Current password is required'
     }),
-    
+
   newPassword: Joi.string()
     .min(8)
     .max(128)
@@ -83,20 +87,20 @@ export const validate = (schema) => {
       abortEarly: false,
       stripUnknown: true
     });
-    
+
     if (error) {
       const errors = error.details.map(detail => ({
         field: detail.path.join('.'),
         message: detail.message
       }));
-      
+
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
         details: errors
       });
     }
-    
+
     req.body = value;
     next();
   };
