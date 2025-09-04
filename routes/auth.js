@@ -8,7 +8,8 @@ const router = express.Router();
 // Register new user
 router.post('/register', validate(registerSchema), async (req, res) => {
   try {
-    const { email, password, role, reseller_id } = req.body;
+    const { email, password } = req.body;
+    // const { email, password, role, reseller_id } = req.body;
     
     // Check if user already exists
     const existingUser = await User.findByEmail(email);
@@ -20,7 +21,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     }
     
     // Create user
-    const user = await User.create({ email, password, role, reseller_id });
+    const user = await User.create({ email, password, role: 'user' });
     
     // Generate token
     const token = User.generateToken(user.id, user.email, user.role);
