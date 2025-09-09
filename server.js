@@ -11,6 +11,7 @@ import { getFacebookAccounts } from './models/FacebookAccount.js';
 import { scrapeChatList, sendMessage , scrapeSingleChat, scrapeChat,scrapeAllChats } from './services/scrapeMarketplaceMessages.js';
 import { getLastMessage } from './models/Message.js';
 import messageRouter from "./routes/message.js"; // adjust path if different
+import {authenticateToken} from './middleware/auth.js';
 dotenv.config();
 
 const app = express()
@@ -104,7 +105,7 @@ app.get('/acc', getFacebookAccounts);
 // import webhookRoutes from './routes/webhooks.js';
 
 app.use('/api/auth', authRoutes);
-app.use('/api/facebook', facebookRoutes);
+app.use('/api/facebook',authenticateToken, facebookRoutes);
 app.use('/api/g_h_l', ghlRoutes);
 app.use('/api/messages', messageRouter);
 

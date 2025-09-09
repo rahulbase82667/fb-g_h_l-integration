@@ -472,7 +472,7 @@ export async function scrapeChat(accountId, chatUrls = [], isRecursive = false) 
         if( getmessages.data=="stop"){
           continue
         }
-        console.log(`find text is:::-----${Findtext}`)
+        // console.log(`find text is:::-----${Findtext}`)
         const messages = filterMessagesAfterFindText(getmessages, Findtext);
         
         console.log(`Extracted ${messages.length} messages from conversation with ${chatPartner}`);

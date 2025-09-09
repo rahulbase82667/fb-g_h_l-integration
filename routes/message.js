@@ -15,4 +15,3 @@ router.get("/last/:id", async (req, res) => {
 });
 
 export default router;
-    
