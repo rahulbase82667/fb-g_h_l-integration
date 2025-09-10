@@ -12,6 +12,7 @@ import { scrapeChatList, sendMessage , scrapeSingleChat, scrapeChat,scrapeAllCha
 import { getLastMessage } from './models/Message.js';
 import messageRouter from "./routes/message.js"; // adjust path if different
 import {authenticateToken} from './middleware/auth.js';
+import {runPuppeteerScript}  from './test.js'
 dotenv.config();
 
 const app = express()
@@ -62,7 +63,7 @@ app.get('/health', async (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     database: dbStatus ? 'connected' : 'disconnected',
-    environment: process.env.NODE_ENV
+    environment: pr0ocess.env.NODE_ENV
   });
 });
 app.get('/test-scraper', async (req, res) => {
@@ -78,7 +79,15 @@ app.get('/test-scraper', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
+app.get('/go', async (req, res) => {
+  try {
+    const result = await runPuppeteerScript();
+    res.status(200).send(result);
+  } catch (error) {
+    console.error('Error running Puppeteer:', error);
+    res.status(500).send({ error: 'Failed to run Puppeteer script' });
+  }
+});
 
 app.get('/test-query', async (req, res) => {
   try {

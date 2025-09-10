@@ -13,8 +13,8 @@ export async function createFacebookAccount(data) {
 
     const result = await query(
       `INSERT INTO fb_accounts 
-      (user_id, account_name, email, phone_number, password_encrypted, proxy_url, login_status, status)
-      VALUES (?, ?, ?, ?, ?, ?, 'active', 'active')`,
+      (user_id, account_name, email, phone_number, password_encrypted, proxy_url,proxy_port, proxy_user,proxy_password,  login_status, status)
+      VALUES (?, ?, ?,?,?,?, ?, ?, ?, 'active', 'active')`,
       [
         data.userId,
         data.accountName || null,
@@ -22,6 +22,9 @@ export async function createFacebookAccount(data) {
         data.phoneNumber || null,
         data.passwordEncrypted,
         data.proxyUrl || null,
+        data.proxy_port || null,
+        data.proxy_user || null,
+        data.proxy_password || null,
       ]
     );
 
@@ -55,7 +58,7 @@ export async function getFacebookAccountById(id) {
     const rows = await query(`SELECT * FROM fb_accounts WHERE id = ?`, [
       id,
     ]);
-
+          
     if (!rows || rows.length === 0) {
       throw new Error("Facebook account not found");
     }
