@@ -6,14 +6,13 @@ import fs from "fs";
 import path from "path";
 import csv from "csv-parser";
 import ExcelJS from "exceljs";   
-import { encrypt } from "../utils/encryption.js";
 import {
   createFacebookAccount,
   getFacebookAccounts,
   updateFacebookAccount,
   deleteFacebookAccount
 } from "../models/FacebookAccount.js";
-import { validate, accountSchema } from './utils/validation.js'; // adjust path
+import { validate, accountSchema } from '../utils/validation.js'; // adjust path
 import { loginFacebookAccount } from "../services/puppeteerLogin.js";
 
 const router = express.Router();
