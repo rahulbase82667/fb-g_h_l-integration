@@ -81,12 +81,12 @@ export const changePasswordSchema = Joi.object({
 });
 
 export const accountSchema = Joi.object({
-  userId: Joi.string().required(),
+  userId: Joi.required(),
   accountName: Joi.string().required(),
   email: Joi.string().email().required(),
   phoneNumber: Joi.string().optional().allow(null, ''),
   password: Joi.string().min(6).required(),
-  proxyUrl: Joi.string().uri().optional().allow(null, ''),
+  proxyUrl: Joi.string().optional().allow(null, ''),
   proxyPort: Joi.number().integer().min(1).max(65535).optional().allow(null),
   proxyUser: Joi.string().optional().allow(null, ''),
   proxyPassword: Joi.string().optional().allow(null, ''),

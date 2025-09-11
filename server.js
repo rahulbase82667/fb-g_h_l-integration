@@ -116,7 +116,7 @@ app.get('/acc', getFacebookAccounts);
 app.use('/api/auth', authRoutes);
 app.use('/api/facebook',authenticateToken, facebookRoutes);
 app.use('/api/g_h_l', ghlRoutes);
-app.use('/api/messages', messageRouter);
+app.use('/api/messages', messageRouter);  
 
 
 

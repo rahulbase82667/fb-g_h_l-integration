@@ -5,7 +5,6 @@ import { query } from "../config/database.js";
  * Create a new Facebook account record
  */
 export async function createFacebookAccount(data) {
-  console.log(data);
   try {
     if (!data.userId || !data.passwordEncrypted) {
       throw new Error("userId and passwordEncrypted are required");
@@ -34,18 +33,58 @@ export async function createFacebookAccount(data) {
     throw new Error("Failed to create Facebook account");
   }
 }
+/**
+ * Bulk create multiple Facebook accounts
+ */
+export async function bulkCreateFacebookAccounts(userId, accounts) {
+  try {
+    if (!accounts || accounts.length === 0) {
+      throw new Error("No accounts provided");
+    }
+
+    const values = accounts.map(acc => [
+      userId,
+      acc.accountName || null,
+      acc.email || null,
+      acc.phoneNumber || null,
+      acc.passwordEncrypted,
+      acc.proxyUrl || null,
+      acc.proxy_port || null,
+      acc.proxy_user || null,
+      acc.proxy_password || null,
+      'active',
+      'active'
+    ]);
+
+    const placeholders = values.map(() => '(?,?,?,?,?,?,?,?,?,?,?)').join(',');
+    const flatValues = values.flat();
+
+    const sql = `
+      INSERT INTO fb_accounts 
+      (user_id, account_name, email, phone_number, password_encrypted, proxy_url, proxy_port, proxy_user, proxy_password, login_status, status)
+      VALUES ${placeholders}
+    `;
+
+    const result = await query(sql, flatValues);
+    return result;
+  } catch (error) {
+    console.error("DB Error: bulkCreateFacebookAccounts:", error.message);
+    throw new Error("Failed to create multiple Facebook accounts");
+  }
+}
+
 
 /**
  * Get all Facebook accounts
  */
 export async function getFacebookAccounts() {
   try {
-    const rows = await query("SELECT * FROM fb_accounts");
+    const rows = await query("SELECT id, account_name, user_id, email, phone_number, proxy_url, proxy_user,proxy_port, login_status FROM fb_accounts");
     return rows;
   } catch (error) {
     console.error("DB Error: getFacebookAccounts:", error.message);
     throw new Error("Failed to fetch Facebook accounts");
-  }
+  } x
 }
 /**
  * Get a single Facebook account by ID
@@ -58,7 +97,7 @@ export async function getFacebookAccountById(id) {
     const rows = await query(`SELECT * FROM fb_accounts WHERE id = ?`, [
       id,
     ]);
-          
+
     if (!rows || rows.length === 0) {
       throw new Error("Facebook account not found");
     }

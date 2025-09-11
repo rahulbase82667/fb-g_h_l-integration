@@ -12,6 +12,6 @@ export async function createConversation(chatUrl, chatPartner, totalMessages, sc
 
 export async function getConversationByUrl(chatUrl) {
   const [rows] = await db.query(`SELECT * FROM conversations WHERE chat_url = ?`, [chatUrl]);
-  return rows[0]; 
+  return rows[0];
 }
 
