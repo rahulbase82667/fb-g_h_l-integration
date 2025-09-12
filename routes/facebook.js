@@ -11,7 +11,8 @@ import {
   getFacebookAccounts,
   updateFacebookAccount,
   deleteFacebookAccount,
-  bulkCreateFacebookAccounts 
+  bulkCreateFacebookAccounts,
+  checkUserExists 
 } from "../models/FacebookAccount.js";
 import { validate, accountSchema } from '../utils/validation.js'; // adjust path
 import { loginFacebookAccount } from "../services/puppeteerLogin.js";
@@ -34,7 +35,13 @@ router.post('/add', validate(accountSchema), async (req, res) => {
       proxyUser,
       proxyPassword,
     } = req.body;
+    const checkUserExist = await checkUserExists({email, phoneNumber });
+    console.log(checkUserExist);
+    if(checkUserExist){
+          res.status(409).json({ success: false, message: 'Accout with this email or phone number already exists' });
 
+    }
+    // return 
     const passwordEncrypted = encrypt(password);
     const proxyPasswordEncrypted = proxyPassword ? encrypt(proxyPassword) : null;
 
@@ -203,6 +210,7 @@ const accounts = rows.map((row) => {
 router.get("/accounts", async (req, res) => {
   try {
     const accounts = await getFacebookAccounts();
+    // const conversations=await getConversations();
     res.json({ success: true, accounts });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -33,6 +33,28 @@ export async function createFacebookAccount(data) {
     throw new Error("Failed to create Facebook account");
   }
 }
+export async function checkUserExists(data) {
+  // return 
+  try {
+    let result = {};
+    if (data.email) {
+      result = await query("SELECT id, account_name FROM fb_accounts WHERE email = ?", [
+        data.email,
+      ]);
+    } else {
+      result = await query("SELECT id, account_name FROM fb_accounts WHERE phone_number = ?", [
+        data.phone_number,
+      ]);
+    }
+    if(result.length > 0){
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error("DB Error: checkUserExists:", error.message);
+    throw new Error("Failed to check user existence");
+  }
+}
 /**
  * Bulk create multiple Facebook accounts
  */
@@ -164,4 +186,6 @@ export default {
   updateFacebookAccount,
   deleteFacebookAccount,
   getFacebookAccountById,
+  checkUserExists,
+  bulkCreateFacebookAccounts,
 };

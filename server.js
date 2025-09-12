@@ -12,6 +12,7 @@ import { scrapeChatList, sendMessage , scrapeSingleChat, scrapeChat,scrapeAllCha
 import { getLastMessage } from './models/Message.js';
 import messageRouter from "./routes/message.js"; // adjust path if different
 import {authenticateToken} from './middleware/auth.js';
+import conversationRouter from './routes/conversation.js';
 // import {runPuppeteerScript}  from './test.js'
 dotenv.config();
 
@@ -63,7 +64,7 @@ app.get('/health', async (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     database: dbStatus ? 'connected' : 'disconnected',
-    environment: pr0ocess.env.NODE_ENV
+    environment: process.env.NODE_ENV
   });
 });
 app.get('/test-scraper', async (req, res) => {
@@ -117,7 +118,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/facebook',authenticateToken, facebookRoutes);
 app.use('/api/g_h_l', ghlRoutes);
 app.use('/api/messages', messageRouter);  
-
+app.use('/api/chats', conversationRouter);
 
 
 // Error handling middleware
