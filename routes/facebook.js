@@ -17,7 +17,7 @@ import {
 import { validate, accountSchema } from '../utils/validation.js'; // adjust path
 import { loginFacebookAccount } from "../services/puppeteerLogin.js";
 import crypto from "crypto";
-
+import loginQueue from "../queues/loginQueue.js";
 const router = express.Router();
 
 // Add account
@@ -216,19 +216,19 @@ router.get("/accounts", async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
-router.get('/login/:id', (async (req, res) => {
-  const accountId = req.params.id;
-  console.log(accountId)
-  const result = await loginFacebookAccount(accountId); // test with account ID 1
+// router.get('/login/:id', (async (req, res) => {
+//   const accountId = req.params.id;
+//   console.log(accountId)
+//   const result = await loginFacebookAccount(accountId); // test with account ID 1
 
-  console.log(result);
-  res.json({
-    success: result.success,
-    accountId: result.accountId,
-    message: result.message,
-    error: result.error
-  });
-}));
+//   console.log(result);
+//   res.json({
+//     success: result.success,
+//     accountId: result.accountId,
+//     message: result.message,
+//     error: result.error
+//   });
+// }));
 // Update account
 router.put("/:id", async (req, res) => {
   try {
@@ -256,5 +256,19 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
-
+router.post("/login/:accountId", async (req, res) => {
+  const { accountId } = req.params;
+  console.log("looged ")
+  try {
+    const job = await loginQueue.add("login-account", { accountId });
+    return res.json({
+      success: true,
+      jobId: job.id,
+      accountId,
+      message: "Login job enqueued",
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 export default router;

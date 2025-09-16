@@ -134,16 +134,61 @@ export async function getFacebookAccountById(id) {
 /**
  * Update a Facebook account by ID
  */
+// export async function updateFacebookAccount(id, data) {
+//   try {
+//     if (!id) throw new Error("Account ID is required");
+//     console.log(data)
+//     console.log(`id is : ${id}`)
+//     const result = await query("UPDATE fb_accounts SET session_cookies = ?, last_login= ?, login_status= ? WHERE id = ?", [
+//       data.session_cookies, 
+//       data.last_login,
+//       data.login_status,
+//       id,
+//     ]);
+
+//     if (result.affectedRows === 0) {
+//       throw new Error("Facebook account not found");
+//     }
+
+//     return result;
+//   } catch (error) {
+//     console.error("DB Error: updateFacebookAccount:", error.message);
+//     throw new Error(error.message || "Failed to update Facebook account");
+//   }
+// }
 export async function updateFacebookAccount(id, data) {
   try {
     if (!id) throw new Error("Account ID is required");
 
-    const result = await query("UPDATE fb_accounts SET session_cookies = ?, last_login= ?, login_status= ? WHERE id = ?", [
-      data.session_cookies,
-      data.last_login,
-      data.login_status,
-      id,
-    ]);
+    const fields = [];
+    const values = [];
+
+    // Conditionally add session_cookies
+    if (data.session_cookies !== undefined) {
+      fields.push("session_cookies = ?");
+      values.push(data.session_cookies ?? null); // Use null if undefined
+    }
+
+    // Conditionally add last_login
+    if (data.last_login !== undefined) {
+      fields.push("last_login = ?");
+      values.push(data.last_login ?? null);
+    }
+
+    // Conditionally add login_status
+    if (data.login_status !== undefined) {
+      fields.push("login_status = ?");
+      values.push(data.login_status ?? null);
+    }
+
+    if (fields.length === 0) {
+      throw new Error("No valid fields provided to update.");
+    }
+
+    const queryStr = `UPDATE fb_accounts SET ${fields.join(", ")} WHERE id = ?`;
+    values.push(id);
+
+    const result = await query(queryStr, values);
 
     if (result.affectedRows === 0) {
       throw new Error("Facebook account not found");

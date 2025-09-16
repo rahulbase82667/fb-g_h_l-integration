@@ -32,7 +32,7 @@ async function launchBrowser(proxyUrl) {
 export async function loginFacebookAccount(accountId) {
   let browser;
   try {
-
+    
     // 1. Get account from DB
     const account = await getFacebookAccountById(accountId);
     // console.log(account);
@@ -46,7 +46,7 @@ export async function loginFacebookAccount(accountId) {
     const page = await browser.newPage();
 
     // 3. Load cookies if available
-    if (account.session_cookies) {
+    if (account.session_cookies && account.login_status=="active") {
       try {
         const cookies = JSON.parse(account.session_cookies);
         await browser.setCookie(...cookies);

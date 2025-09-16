@@ -1,4 +1,6 @@
 import express from 'express';
+import http from 'http'; // ✅ needed for socket.io
+import { Server } from 'socket.io'; // ✅
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -8,16 +10,33 @@ import authRoutes from './routes/auth.js';
 import facebookRoutes from './routes/facebook.js';
 import ghlRoutes from './routes/ghl.js';
 import { getFacebookAccounts } from './models/FacebookAccount.js';
-import { scrapeChatList, sendMessage , scrapeSingleChat, scrapeChat,scrapeAllChats } from './services/scrapeMarketplaceMessages.js';
+import { scrapeChatList, sendMessage, scrapeSingleChat, scrapeChat, scrapeAllChats } from './services/scrapeMarketplaceMessages.js';
 import { getLastMessage } from './models/Message.js';
 import messageRouter from "./routes/message.js"; // adjust path if different
-import {authenticateToken} from './middleware/auth.js';
+import { authenticateToken } from './middleware/auth.js';
 import conversationRouter from './routes/conversation.js';
+import scrapeRoutes from "./routes/scrapeRoutes.js";
+import { setSocketIO as setScraperSocket } from "./workers/scraperWorker.js";
+import { setSocketIO as setLoginSocket } from "./workers/loginWorker.js";
+import { setSocketIO } from "./workers/scraperWorker.js"; // 👈 add this
+import { scrapeQueue } from "./queues/scrapeQueue.js";
+import { loginQueue } from "./queues/loginQueue.js";
+import { appendToConversations } from './models/conversations.js';
 // import {runPuppeteerScript}  from './test.js'
 dotenv.config();
 
 const app = express()
 const port = process.env.PORT || 3000;
+const server = http.createServer(app);
+// ✅ Attach socket.io
+const io = new Server(server, {
+  cors: {
+    origin: "*", // or restrict to frontend domain in production
+  },
+});
+setSocketIO(io);
+setScraperSocket(io);
+setLoginSocket(io);
 app.set('trust proxy', 1);
 
 // Security middleware 
@@ -67,12 +86,15 @@ app.get('/health', async (req, res) => {
     environment: process.env.NODE_ENV
   });
 });
+app.get('/testt', async (req, res) => {
+  res.json(await appendToConversations(1, "https://www.facebook.com/messages/t/24452627391033013/"));
+})
 app.get('/test-scraper', async (req, res) => {
   try {
     // const data = await scrapeSingleChat(1,['https://www.facebook.com/messages/t/742182578820330'],2);
     // const data = await sendMessage(1);
     // const data = await scrapeMarketplaceMessagesTest(1);
-    const data = await scrapeAllChats(1);
+    const data = await scrapeAllChats(1, true);
     // const data = await scrapeAllChats(1);
     // const data = await scrapeChatList(1);
     res.json(data);
@@ -80,15 +102,6 @@ app.get('/test-scraper', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-// app.get('/go', async (req, res) => {
-//   try {
-//     const result = await runPuppeteerScript();
-//     res.status(200).send(result);
-//   } catch (error) {
-//     console.error('Error running Puppeteer:', error);
-//     res.status(500).send({ error: 'Failed to run Puppeteer script' });
-//   }
-// });
 
 app.get('/test-query', async (req, res) => {
   try {
@@ -109,16 +122,12 @@ app.get('/', (req, res) => {
   });
 });
 app.get('/acc', getFacebookAccounts);
-// Future route imports (uncomment as you build them)
-// import authRoutes from './routes/auth.js';
-// import facebookRoutes from './routes/facebook.js';
-// import webhookRoutes from './routes/webhooks.js';
-
 app.use('/api/auth', authRoutes);
-app.use('/api/facebook',authenticateToken, facebookRoutes);
+app.use('/api/facebook', authenticateToken, facebookRoutes);
 app.use('/api/g_h_l', ghlRoutes);
-app.use('/api/messages', messageRouter);  
+app.use('/api/messages', messageRouter);
 app.use('/api/chats', conversationRouter);
+app.use("/api/scrape", scrapeRoutes);
 
 
 // Error handling middleware
@@ -146,14 +155,19 @@ const startServer = async () => {
       process.exit(1);
     }
 
-    app.listen(port, () => {
+    server.listen(port, () => {
       console.log(` Server running on port ${port}`);
       console.log(`Environment: ${process.env.NODE_ENV}`);
       console.log(` Health check: http://localhost:${port}/health`);
       // Start the token refresh cron job 
       // startTokenRefreshJob();
     });
-
+    (async () => {
+      await scrapeQueue.clean(0, "completed");
+      await scrapeQueue.clean(0, "failed");   // if you don’t want failed jobs either
+      await loginQueue.clean(0, "completed");
+      console.log("✅ Old jobs cleaned up at startup");
+    })();
   } catch (error) {
     console.error('Server startup failed:', error.message);
     process.exit(1);

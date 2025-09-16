@@ -1,5 +1,6 @@
+import { all } from "axios";
 import db from "../config/database.js";
-
+import { chatData } from "./chatUrls.js";
 export async function createConversation(chatUrl, chatPartner, totalMessages, scrapedAt) {
   const [result] = await db.query(
     `INSERT INTO conversations (chat_url, chat_partner, total_messages, scraped_at)
@@ -15,3 +16,13 @@ export async function getConversationByUrl(chatUrl) {
   return rows[0];
 }
 
+export async function appendToConversations(accountId=1,chatUrl){
+  const allConversations = await chatData(accountId);
+  const urls=JSON.parse(allConversations.map(entry => entry.url));
+  const chatdata=urls.filter(convo => convo.chatUrl == chatUrl);
+  if(chatdata.length > 0) {
+    let test=await createConversation(chatUrl,chatdata[0].chatPartner,null,null);
+    return true
+  };
+  return false;
+}

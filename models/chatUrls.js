@@ -62,3 +62,21 @@ export default {
     getChatUrls,
     updateChatUrls
 }
+export async function chatData(accountId) {
+    try {
+        if (!accountId) throw new Error("Account ID is required");
+
+        const rows = await query(`SELECT * FROM chatUrls WHERE fb_account_id = ?`, [
+            accountId,
+        ]);
+
+        if (!rows || rows.length === 0) {
+            throw new Error("Chat urls not found");
+        }   
+        return rows;            
+
+    } catch (e) {
+        console.error("DB Error: getChatUrls:", e.message);
+        throw new Error(e.message || "Failed to get chat urls");
+    }
+}
