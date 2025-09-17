@@ -23,7 +23,6 @@ import { scrapeQueue } from "./queues/scrapeQueue.js";
 import { loginQueue } from "./queues/loginQueue.js";
 import { appendToConversations } from './models/conversations.js';
 // import {runPuppeteerScript}  from './test.js'
-import { testt } from './check_enc.js';
 dotenv.config();
 
 const app = express()
@@ -155,7 +154,6 @@ const startServer = async () => {
       console.error('Cannot start server: Database connection failed');
       process.exit(1);
     }
-    testt();
     server.listen(port, () => {
       console.log(` Server running on port ${port}`);
       console.log(`Environment: ${process.env.NODE_ENV}`);
