@@ -9,7 +9,8 @@
     "dev": "nodemon server.js",
     "db:setup": "node scripts/setup-database.js",
     "test": "jest",
-    "build": "echo 'no build step needed'"
+    "build": "echo 'no build step needed'",
+    "postinstall": "npx puppeteer install"
   },
   "dependencies": {
     "axios": "^1.5.0",
