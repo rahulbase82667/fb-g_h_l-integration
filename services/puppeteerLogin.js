@@ -5,65 +5,34 @@ import { decrypt } from "../utils/encryption.js";
 import { getFacebookAccountById, updateFacebookAccount } from "../models/FacebookAccount.js";
 import pool from "../config/database.js";
 import { Browser } from "puppeteer";
-import os from "os";
-import path from "path";
-import { executablePath } from "puppeteer"; // from puppeteer-core if needed
-
 puppeteer.use(StealthPlugin());
 
 /**
  * Launch Puppeteer with proxy (if available)
  */
-// async function launchBrowser(proxyUrl) {
-//   const launchOptions = {
-//     headless: false, // set true in production
-//     args: [
-//       "--no-sandbox",
-//       "--disable-setuid-sandbox",
-//     ],
-//   };
-
-//   if (proxyUrl) {
-//     launchOptions.args.push(`--proxy-server=${proxyUrl}`);
-//   }
-
-//   return await puppeteer.launch(launchOptions);
-// }
-
 async function launchBrowser(proxyUrl) {
-  // 1. Set cross-platform Puppeteer cache path
-  const isRender = process.env.RENDER === "true"; // or set this var yourself
-  const puppeteerCacheDir = isRender
-    ? "/tmp/.cache/puppeteer"
-    : path.join(os.homedir(), ".puppeteer-cache");
-
-  process.env.PUPPETEER_CACHE_DIR = puppeteerCacheDir;
-
-  // 2. Setup launch options
   const launchOptions = {
-    headless: true, // set to false only for debugging locally
+    headless: false, // set true in production
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
     ],
-    executablePath: executablePath(), // use Puppeteer's bundled Chrome
   };
 
-  // 3. Add proxy if provided
   if (proxyUrl) {
     launchOptions.args.push(`--proxy-server=${proxyUrl}`);
   }
 
-  // 4. Launch and return browser
   return await puppeteer.launch(launchOptions);
 }
+
 /**
  * Try logging into Facebook using cookies or credentials
  */
 export async function loginFacebookAccount(accountId) {
   let browser;
   try {
-
+    
     // 1. Get account from DB
     const account = await getFacebookAccountById(accountId);
     // console.log(account);
@@ -77,7 +46,7 @@ export async function loginFacebookAccount(accountId) {
     const page = await browser.newPage();
 
     // 3. Load cookies if available
-    if (account.session_cookies && account.login_status == "active") {
+    if (account.session_cookies && account.login_status=="active") {
       try {
         const cookies = JSON.parse(account.session_cookies);
         await browser.setCookie(...cookies);
@@ -118,7 +87,7 @@ export async function loginFacebookAccount(accountId) {
         page.click("button[name='login']"),
         page.waitForNavigation({ waitUntil: "networkidle2" }),
       ]);
-
+    
       console.log("Logged in successfully");
 
     }
@@ -126,8 +95,8 @@ export async function loginFacebookAccount(accountId) {
     else {
       // 6. Perform login
       console.log("  Session valid, no login needed");
-      return { success: true, accountId: account.id, message: "Facebook account is already Logged." };
-
+    return { success: true, accountId: account.id ,message: "Facebook account is already Logged." };
+      
     }
     // return false;
     // 7. Save cookies
@@ -140,7 +109,7 @@ export async function loginFacebookAccount(accountId) {
 
     console.log("  Session cookies updated in DB");
 
-    return { success: true, accountId: account.id, message: "Facebook account Logged in and cookies stored succsfully." };
+    return { success: true, accountId: account.id ,message: "Facebook account Logged in and cookies stored succsfully." };
 
   } catch (error) {
     console.error("Login error:", error.message);
@@ -150,7 +119,7 @@ export async function loginFacebookAccount(accountId) {
     return { success: false, error: error.message };
 
   }
-  finally {
+   finally {
     if (browser) await browser.close();
   }
 }
