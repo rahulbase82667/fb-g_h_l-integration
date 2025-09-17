@@ -1,0 +1,162 @@
+[
+  {
+    "timestamp": "2025-09-16T08:46:41.247Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'summary')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'summary')\n    at Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:108:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T08:46:45.485Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'summary')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'summary')\n    at Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:108:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T08:47:50.088Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'summary')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'summary')\n    at Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:108:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:03:17.047Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'summary')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'summary')\n    at Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:108:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:03:24.257Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'summary')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'summary')\n    at Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:108:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:04:02.528Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'summary')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'summary')\n    at Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:108:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:05:40.789Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'summary')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'summary')\n    at Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:108:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:05:45.253Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'summary')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'summary')\n    at Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:108:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:05:57.136Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'summary')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'summary')\n    at Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:108:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:06:04.588Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'summary')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'summary')\n    at Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:108:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:06:43.439Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'summary')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'summary')\n    at Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:108:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:06:48.405Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'summary')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'summary')\n    at Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:108:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:13:46.563Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'summary')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'summary')\n    at Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:108:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:13:52.298Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'summary')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'summary')\n    at Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:108:27)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:15:34.103Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "logError is not defined",
+    "stack": "ReferenceError: logError is not defined\n    at scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:582:5)\n    at async scrapeAllChats (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:641:14)\n    at async Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:92:22)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:15:59.828Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "logError is not defined",
+    "stack": "ReferenceError: logError is not defined\n    at scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:582:5)\n    at async scrapeAllChats (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:641:14)\n    at async Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:92:22)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:16:27.420Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "logError is not defined",
+    "stack": "ReferenceError: logError is not defined\n    at scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:582:5)\n    at async scrapeAllChats (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:641:14)\n    at async Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:92:22)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:17:57.239Z",
+    "filename": "scraperWorker.js",
+    "function": "scrapeQueue",
+    "errorType": "scrapingError",
+    "message": "logError is not defined",
+    "stack": "ReferenceError: logError is not defined\n    at scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:582:5)\n    at async scrapeAllChats (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:641:14)\n    at async Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:92:22)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:19:00.644Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "i is not defined",
+    "stack": "ReferenceError: i is not defined\n    at scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:564:54)\n    at async scrapeAllChats (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:642:14)\n    at async Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:92:22)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  },
+  {
+    "timestamp": "2025-09-16T10:20:29.093Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "i is not defined",
+    "stack": "ReferenceError: i is not defined\n    at scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:564:54)\n    at async scrapeAllChats (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:642:14)\n    at async Worker.connection.connection [as processFn] (file:///D:/Peter@Ritik/fb_integration/Backend/workers/scraperWorker.js:92:22)\n    at async D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:498:32\n    at async Worker.retryIfFailed (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\bullmq\\dist\\cjs\\classes\\worker.js:776:24)"
+  }
+]
