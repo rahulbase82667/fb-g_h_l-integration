@@ -31,7 +31,7 @@ const worker = new Worker(
           `✅ Login successful for account ${accountId}, cookies stored in DB`
         );
       } else {
-        if (io) io.emit("login-failed", { accountId, error: err.message });
+        if (io) io.emit("login-failed", { accountId, error: result.error });
 
         console.warn(`⚠️ Login failed for account ${accountId}:`, result.error);
       }
