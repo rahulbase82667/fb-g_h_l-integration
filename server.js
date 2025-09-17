@@ -91,10 +91,10 @@ app.get('/testt', async (req, res) => {
 })
 app.get('/test-scraper', async (req, res) => {
   try {
-    // const data = await scrapeSingleChat(1,['https://www.facebook.com/messages/t/742182578820330'],2);
+    const data = await scrapeSingleChat(1,"https://www.facebook.com/messages/t/24452627391033013/");
     // const data = await sendMessage(1);
     // const data = await scrapeMarketplaceMessagesTest(1);
-    const data = await scrapeAllChats(1, true);
+    // const data = await scrapeAllChats(1, true);
     // const data = await scrapeAllChats(1);
     // const data = await scrapeChatList(1);
     res.json(data);
