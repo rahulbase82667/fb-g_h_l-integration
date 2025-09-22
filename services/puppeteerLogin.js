@@ -14,6 +14,7 @@ async function launchBrowser(proxyUrl) {
   const launchOptions = {
     headless: false, // set true in production
     args: [
+      // `--proxy-server=${proxy.ip}:${proxy.port}`,
       "--no-sandbox",
       "--disable-setuid-sandbox",
     ],
@@ -107,7 +108,7 @@ export async function loginFacebookAccount(accountId) {
       login_status: "active",
     });
 
-    console.log("  Session cookies updated in DB");
+    console.log("Session cookies updated in DB");
 
     return { success: true, accountId: account.id ,message: "Facebook account Logged in and cookies stored succsfully." };
 

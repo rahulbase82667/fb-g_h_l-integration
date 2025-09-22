@@ -3,45 +3,51 @@ import StealthPlugin from "puppeteer-extra-plugin-stealth";
 
 puppeteer.use(StealthPlugin());
 
-const proxy = {
-  ip: "198.23.239.134",
-  port: "6540",
-  username: "tcdcmhjv",
-  password: "7as9anjfx7gl"
+const proxies = [
+  "198.23.239.134:6540:tcdcmhjv:7as9anjfx7gl",
+  "136.0.207.84:6661:tcdcmhjv:7as9anjfx7gl",
+  "216.10.27.159:6837:tcdcmhjv:7as9anjfx7gl",
+  "142.147.128.93:6593:tcdcmhjv:7as9anjfx7gl"
+]
+
+
+const url = "https://btr.topscripts.in/peter_boyle@facebook_integration/test.php";
+
+export const runPuppeteerScript = async () => {
+  for (const proxy of proxies) {
+    try {
+      const browser = await puppeteer.launch({
+        headless: false,
+        args: [
+          `--proxy-server=${proxy}`,
+          "--no-sandbox",
+          "--disable-setuid-sandbox"
+        ]
+      });
+
+      const page = await browser.newPage();
+      // If you need authentication, add it here (not included for safety)
+
+      await page.setExtraHTTPHeaders({
+        "User-Agent": "Mozilla/5.0 (Puppeteer Bot)"
+      });
+
+      const response = await page.goto(url, {
+        waitUntil: "networkidle2",
+        timeout: 30000
+      });
+
+      console.log(`✅ Proxy ${proxy} worked, status: ${response.status()}`);
+      // Do something with the page content if needed
+      // const content = await page.content();
+      await browser.close();
+      break; // stop if one proxy works
+
+    } catch (err) {
+      console.error(`❌ Proxy ${proxy} failed:`, err.message);
+      // move on to the next proxy
+    }
+  }
 };
 
-const url = 'https://btr.topscripts.in/peter_boyle@facebook_integration/test.php';
-
-export const runPuppeteerScript=async () => {
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: [
-      `--proxy-server=${proxy.ip}:${proxy.port}`,
-      "--no-sandbox",
-      "--disable-setuid-sandbox"
-    ]
-  });
-
-  const page = await browser.newPage();
-
-  // Authenticate proxy
-  await page.authenticate({
-    username: proxy.username,
-    password: proxy.password
-  });
-
-  await page.setExtraHTTPHeaders({
-    'User-Agent': 'Mozilla/5.0 (Puppeteer Bot)'
-  });
-
-  const response = await page.goto(url, {
-    waitUntil: 'networkidle2',
-    timeout: 30000
-  });
-
-  const content = await page.content();
-  console.log(`Status: ${response.status()}`);
-  console.log(content);
-
-  await browser.close();
-};
+runPuppeteerScript();

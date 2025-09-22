@@ -647,7 +647,7 @@ export async function scrapeAllChats(accountId, isRecursive = false, progressCal
   return data;
 }
 
-export async function scrapeSingleChat(accountId, chatUrls) {
+export async function scrapeSingleChat(accountId, chatUrls,progressCallback = null) {
 if (!Array.isArray(chatUrls)) chatUrls = [chatUrls];
   if (!accountId) {
     throw new Error("Account ID is required");
@@ -658,7 +658,7 @@ if (!Array.isArray(chatUrls)) chatUrls = [chatUrls];
 
   // const Findtext = await getLastMessage(conversationId);
   // return Findtext;
-  return await scrapeChat(accountId, chatUrls, null, 0);
+  return await scrapeChat(accountId, chatUrls, false, progressCallback);
 }
 
 

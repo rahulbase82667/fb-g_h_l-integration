@@ -14,9 +14,13 @@ router.post("/chats/:accountId", async (req, res) => {
   res.json({ success: true, jobId: job.id, accountId });
 });
 
-router.post("/connect/:accountId",async (req, res) => {
-  const { accountId } = req.params;
-  const job = await scrapeQueue.add("connect-account", { accountId });
+router.post("/chats/single/:accountId", async (req, res) => {
+  const { accountId } = req.params;  
+  const chatUrl = req.body.chatUrl;
+  // console.log(`chat is :${chatUrl}`);  
+  // put job in queue
+  const job = await scrapeQueue.add("scrape-account", { accountId,chatUrl });
+  // console.log(job);
   res.json({ success: true, jobId: job.id, accountId });
-})
+});
 export default router;

@@ -65,13 +65,18 @@
 // workers/scraperWorker.js
 import { Worker } from "bullmq";
 import Redis from "ioredis";
-import { scrapeAllChats } from "../services/scrapeMarketplaceMessages.js";
+import { scrapeAllChats, scrapeSingleChat } from "../services/scrapeMarketplaceMessages.js";
 import { logError } from "../utils/logger.js";
 // const connection = new Redis(process.env.REDIS_URL);
 const connection = new Redis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null
 });
 let io;
+/*************  ✨ Windsurf Command ⭐  *************/
+/**
+ * Set the Socket.IO instance for this worker.
+
+/*******  879c7c97-2ff7-4f68-ba0d-82215fbe6879  *******/
 export function setSocketIO(ioInstance) {
   io = ioInstance;
 }
@@ -79,8 +84,12 @@ export function setSocketIO(ioInstance) {
 const worker = new Worker(
   "scrapeQueue",
   async (job) => {
-    const { accountId } = job.data;
+    const { accountId, chatUrl } = job.data;
     console.log("Worker got job:", job.id, "for account:", accountId);
+    let isSingleChat = false;
+    if (chatUrl) { isSingleChat = true;console.log("single chat")  }
+  
+
 
     // 🔌 Notify frontend scraping started
     if (io) {
@@ -88,8 +97,9 @@ const worker = new Worker(
     }
 
     try {
+      let result;
       // Wrap scrapeAllChats with progress reporting
-      const result = await scrapeAllChats(accountId, true, (progress) => {
+      if(!isSingleChat){result = await scrapeAllChats(accountId, true, (progress) => {
         if (io) {
           io.emit("scrape-progress", {
             accountId,
@@ -98,6 +108,16 @@ const worker = new Worker(
           });
         }
       });
+    }else{result = await scrapeSingleChat(accountId, chatUrl, (progress) => {
+        if (io) {
+          io.emit("scrape-progress", {
+            accountId,
+            jobId: job.id,
+            ...progress, // { current, total, partner }
+          });
+        }
+      });
+    }
 
       console.log("Finished scraping account:", accountId);
 
