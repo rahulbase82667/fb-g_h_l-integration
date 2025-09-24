@@ -180,23 +180,23 @@ export async function scrapeChatList(accountId, options = {}) {
       chatlist: marketPlaceChatUrl
     }
   } catch (error) {
-    try {
-      await updateFacebookAccount(accountId, {
-        // session_cookies: cookies,
-        login_status: "error",
-        last_error: error.message,
-        last_scraped: new Date().toISOString()
-      });
-    } catch (updateError) {
-      logError({
-        filename: "scrapemarketplacemessages.js",
-        function: "scrapechatlist",
-        errorType: "updateError",
-        message: updateError.message,
-        stack: updateError.stack,
-      });
-      // console.error("Failed to update account status:", updateError.message);
-    }
+    // try {
+    //   await updateFacebookAccount(accountId, {
+    //     // session_cookies: cookies,
+    //     login_status: "error",
+    //     last_error: error.message,
+    //     last_scraped: new Date().toISOString()
+    //   });
+    // } catch (updateError) {
+    //   logError({
+    //     filename: "scrapemarketplacemessages.js",
+    //     function: "scrapechatlist",
+    //     errorType: "updateError",
+    //     message: updateError.message,
+    //     stack: updateError.stack,
+    //   });
+    //   // console.error("Failed to update account status:", updateError.message);
+    // }
     // console.error("DB Error: scrapeChatList:", error.message);
     logError({
       filename: "scrapemarketplacemessages.js",
@@ -419,7 +419,7 @@ async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber 
           console.error(`Error processing message row ${index}:`, rowError);
         }
       });
-      console.log(extractedMessages)
+      // console.log(extractedMessages)
       return extractedMessages;
     } catch (error) {
       logError({
@@ -580,6 +580,8 @@ export async function scrapeChat(accountId, chatUrls = [], isRecursive = false, 
     };
 
   } catch (error) {
+    console.log("-------------------------------------------------------------------------ererer-------")
+    console.log('error', error);
     logError({
       filename: "scrapemarketplacemessages.js",
       function: "scrapeChat",
@@ -630,6 +632,7 @@ export async function scrapeAllChats(accountId, isRecursive = false, progressCal
   if (!accountId) {
     throw new Error("Account ID is required");
   }
+  console.log('started scrapeall accounts')
   const chatList = await getChatUrls(accountId);
   if (!chatList || chatList.length === 0) {
 
@@ -655,6 +658,8 @@ if (!Array.isArray(chatUrls)) chatUrls = [chatUrls];
   if (!chatUrls || chatUrls.length === 0) {
     throw new Error("Chat urls is required");
   }
+  console.log('started scrape single chat')
+
 
   // const Findtext = await getLastMessage(conversationId);
   // return Findtext;

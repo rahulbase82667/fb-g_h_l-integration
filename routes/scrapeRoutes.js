@@ -10,7 +10,7 @@ router.post("/chats/:accountId", async (req, res) => {
 
   // put job in queue
   const job = await scrapeQueue.add("scrape-account", { accountId });
-
+console.log('all accoutns')
   res.json({ success: true, jobId: job.id, accountId });
 });
 

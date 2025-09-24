@@ -31,7 +31,16 @@ export class User {
       throw new Error(`User creation failed: ${error.message}`);
     }
   }
-
+  static async changeName(userId, name) {
+    try {
+      await query(
+        'UPDATE users SET name = ? WHERE id = ?',
+        [name, userId]
+      );
+    } catch (error) {
+      throw new Error(`User update failed: ${error.message}`);
+    }
+  }
   static async findByEmail(email) {
     try {
       const users = await query(

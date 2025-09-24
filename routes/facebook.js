@@ -258,6 +258,7 @@ router.delete("/:id", async (req, res) => {
 });
 router.post("/login/:accountId", async (req, res) => {
   const { accountId } = req.params;
+  console.log('login account triggered')
   try {
     const job = await loginQueue.add("login-account", { accountId });
     return res.json({

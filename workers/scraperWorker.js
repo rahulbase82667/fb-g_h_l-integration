@@ -1,68 +1,3 @@
-// import { Worker } from "bullmq";
-// import Redis from "ioredis";
-
-// // 👇 Import your real scraper
-// import { scrapeAllChats,scrapeChatList } from "../services/scrapeMarketplaceMessages.js";
-
-// // const connection = new Redis(process.env.REDIS_URL);
-// const connection = new Redis(process.env.REDIS_URL, {
-//   maxRetriesPerRequest: null
-// });
-
-// const worker = new Worker(
-//   "scrapeQueue",
-//   async (job) => {
-//     const { accountId } = job.data;
-
-//     console.log(`📥 Worker started job ${job.id} for account ${accountId}`);
-
-//     // ✅ emit "started"
-//     global.io?.emit("scrapeStatus", {
-//       accountId,
-//       status: "started",
-//       message: "Scraping started. This may take a few minutes.",
-//     });
-//     try {
-//    await scrapeChatList(accountId);
-
-//       // 🔹 Run your real scraping function
-//       const result = await scrapeAllChats(accountId, true);
-
-//        // ✅ emit "completed"
-//       global.io?.emit("scrapeStatus", {
-//         accountId,
-//         status: "completed",
-//         message: `Scraping finished. Total ${result.summary.totalMessages} messages.`,
-//         summary: result.summary,
-//       });
-
-//       // Return result so BullMQ stores it in Redis
-//       return result;
-//     } catch (err) {
-//       global.io?.emit("scrapeStatus", {
-//         accountId,
-//         status: "failed",
-//         message: `Scraping failed: ${err.message}`,
-//       });
-//       throw err;
-//     }
-//   },
-//   { connection }
-// );
-
-// // Events for logging
-// worker.on("completed", (job, result) => {
-//   console.log(`🎉 Job ${job.id} completed for account ${job.data.accountId}`);
-// });
-
-// worker.on("failed", (job, err) => {
-//   console.error(`💥 Job ${job?.id} failed for account ${job?.data?.accountId}:`, err.message);
-// });
-
-// export function setSocketIO(io) {
-//   global.io = io;
-// }
-// workers/scraperWorker.js
 import { Worker } from "bullmq";
 import Redis from "ioredis";
 import { scrapeAllChats, scrapeSingleChat } from "../services/scrapeMarketplaceMessages.js";
@@ -89,7 +24,7 @@ const worker = new Worker(
     let isSingleChat = false;
     if (chatUrl) { isSingleChat = true;console.log("single chat")  }
   
-
+      console.log('running now')
 
     // 🔌 Notify frontend scraping started
     if (io) {
@@ -131,7 +66,7 @@ const worker = new Worker(
 
       return { status: "done", result };
     } catch (err) {
-      // console.error("Scraping failed for account:", accountId, err);
+      console.error("Scraping failed for account:", accountId, err);
       logError({
         filename: "scraperWorker.js",
         function: "scrapeQueue",
