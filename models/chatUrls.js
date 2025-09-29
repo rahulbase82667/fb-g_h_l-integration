@@ -28,6 +28,7 @@ export async function getChatUrls(accountId) {
             // throw new Error("Chat urls not found");
             return null;
         }   
+        // console.log(rows)
         let chatUrls=JSON.parse(rows[0].url).map(entry => entry.chatUrl);
         return chatUrls;
 

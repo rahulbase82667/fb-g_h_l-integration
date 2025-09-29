@@ -112,7 +112,6 @@ export async function getFacebookAccounts() {
  * Get a single Facebook account by ID
  */
 export async function getFacebookAccountById(id) {
-
   try {
     if (!id) throw new Error("Account ID is required");
 

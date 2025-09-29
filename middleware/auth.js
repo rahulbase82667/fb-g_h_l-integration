@@ -18,7 +18,7 @@ export const authenticateToken = async (req, res, next) => {
     
     // Get user from database
     const users = await query(
-      'SELECT id, email, role, reseller_id, created_at FROM users WHERE id = ?',
+      'SELECT id, email, role, reseller_id created_at FROM users WHERE id = ?',
       [decoded.userId]
     );
 
