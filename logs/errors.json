@@ -1,0 +1,210 @@
+[
+  {
+    "timestamp": "2025-09-24T14:08:54.953Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapechatlist",
+    "errorType": "scrapingError",
+    "message": "No chat conversations found. The page structure might have changed.",
+    "stack": "Error: No chat conversations found. The page structure might have changed.\n    at scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:349:13)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:99:18"
+  },
+  {
+    "timestamp": "2025-09-24T14:48:26.780Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapechatlist",
+    "errorType": "scrapingError",
+    "message": "chatLinks is not defined",
+    "stack": "ReferenceError: chatLinks is not defined\n    at scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:304:4)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:99:18"
+  },
+  {
+    "timestamp": "2025-09-25T06:48:04.912Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapechatlist",
+    "errorType": "scrapingError",
+    "message": "chatLinks is not defined",
+    "stack": "ReferenceError: chatLinks is not defined\n    at scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:304:4)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:99:18"
+  },
+  {
+    "timestamp": "2025-09-25T06:54:01.824Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapechatlist",
+    "errorType": "scrapingError",
+    "message": "require is not defined",
+    "stack": "ReferenceError: require is not defined\n    at evaluate (evaluate at scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:241:12), <anonymous>:1:17)\n    at #evaluate (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\puppeteer-core\\lib\\cjs\\puppeteer\\cdp\\ExecutionContext.js:391:56)\n    at async ExecutionContext.evaluate (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\puppeteer-core\\lib\\cjs\\puppeteer\\cdp\\ExecutionContext.js:277:16)\n    at async IsolatedWorld.evaluate (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\puppeteer-core\\lib\\cjs\\puppeteer\\cdp\\IsolatedWorld.js:100:16)\n    at async CdpFrame.evaluate (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\puppeteer-core\\lib\\cjs\\puppeteer\\api\\Frame.js:364:20)\n    at async CdpPage.evaluate (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\puppeteer-core\\lib\\cjs\\puppeteer\\api\\Page.js:822:20)\n    at async scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:241:1)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:99:18"
+  },
+  {
+    "timestamp": "2025-09-25T06:54:11.412Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapechatlist",
+    "errorType": "scrapingError",
+    "message": "require is not defined",
+    "stack": "ReferenceError: require is not defined\n    at evaluate (evaluate at scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:241:12), <anonymous>:1:17)\n    at #evaluate (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\puppeteer-core\\lib\\cjs\\puppeteer\\cdp\\ExecutionContext.js:391:56)\n    at async ExecutionContext.evaluate (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\puppeteer-core\\lib\\cjs\\puppeteer\\cdp\\ExecutionContext.js:277:16)\n    at async IsolatedWorld.evaluate (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\puppeteer-core\\lib\\cjs\\puppeteer\\cdp\\IsolatedWorld.js:100:16)\n    at async CdpFrame.evaluate (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\puppeteer-core\\lib\\cjs\\puppeteer\\api\\Frame.js:364:20)\n    at async CdpPage.evaluate (D:\\Peter@Ritik\\fb_integration\\Backend\\node_modules\\puppeteer-core\\lib\\cjs\\puppeteer\\api\\Page.js:822:20)\n    at async scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:241:1)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:99:18"
+  },
+  {
+    "timestamp": "2025-09-25T07:00:23.092Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapechatlist",
+    "errorType": "scrapingError",
+    "message": "screen is not defined",
+    "stack": "ReferenceError: screen is not defined\n    at scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:242:21)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:99:18"
+  },
+  {
+    "timestamp": "2025-09-25T07:01:57.383Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapechatlist",
+    "errorType": "scrapingError",
+    "message": "screen is not defined",
+    "stack": "ReferenceError: screen is not defined\n    at scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:241:21)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:99:18"
+  },
+  {
+    "timestamp": "2025-09-25T07:03:54.731Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapechatlist",
+    "errorType": "scrapingError",
+    "message": "Cannot read properties of undefined (reading 'length')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'length')\n    at scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:308:16)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:99:18"
+  },
+  {
+    "timestamp": "2025-09-25T08:12:46.639Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapechatlist",
+    "errorType": "scrapingError",
+    "message": "No chat conversations found. The page structure might have changed.",
+    "stack": "Error: No chat conversations found. The page structure might have changed.\n    at scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:340:13)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:99:18"
+  },
+  {
+    "timestamp": "2025-09-25T08:15:03.455Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapechatlist",
+    "errorType": "scrapingError",
+    "message": "marketPlaceChatUrl is not defined",
+    "stack": "ReferenceError: marketPlaceChatUrl is not defined\n    at scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:356:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:99:18"
+  },
+  {
+    "timestamp": "2025-09-25T08:18:36.044Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapechatlist",
+    "errorType": "scrapingError",
+    "message": "Unterminated string in JSON at position 500 (line 1 column 501)",
+    "stack": "Error: Unterminated string in JSON at position 500 (line 1 column 501)\n    at getChatUrls (file:///D:/Peter@Ritik/fb_integration/Backend/models/chatUrls.js:36:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:342:23)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:99:18"
+  },
+  {
+    "timestamp": "2025-09-25T10:28:44.355Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "Database query failed: Unknown column 'initial_scrape_status' in 'field list'",
+    "stack": "Error: Database query failed: Unknown column 'initial_scrape_status' in 'field list'\n    at query (file:///D:/Peter@Ritik/fb_integration/Backend/config/database.js:45:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:632:34)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:852:10)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:94:18"
+  },
+  {
+    "timestamp": "2025-09-25T10:28:54.930Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "Database query failed: Unknown column 'initial_scrape_status' in 'field list'",
+    "stack": "Error: Database query failed: Unknown column 'initial_scrape_status' in 'field list'\n    at query (file:///D:/Peter@Ritik/fb_integration/Backend/config/database.js:45:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:632:34)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:852:10)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:94:18"
+  },
+  {
+    "timestamp": "2025-09-25T13:57:40.625Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "Database query failed: This version of MySQL doesn't yet support 'item type for JSON'",
+    "stack": "Error: Database query failed: This version of MySQL doesn't yet support 'item type for JSON'\n    at getFacebookAccountById (file:///D:/Peter@Ritik/fb_integration/Backend/models/FacebookAccount.js:130:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:632:21)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:857:13)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:96:18"
+  },
+  {
+    "timestamp": "2025-09-25T13:58:11.352Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "Database query failed: This version of MySQL doesn't yet support 'item type for JSON'",
+    "stack": "Error: Database query failed: This version of MySQL doesn't yet support 'item type for JSON'\n    at getFacebookAccountById (file:///D:/Peter@Ritik/fb_integration/Backend/models/FacebookAccount.js:130:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:632:21)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:857:13)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:96:18"
+  },
+  {
+    "timestamp": "2025-09-25T14:00:21.023Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "Database query failed: This version of MySQL doesn't yet support 'item type for JSON'",
+    "stack": "Error: Database query failed: This version of MySQL doesn't yet support 'item type for JSON'\n    at getFacebookAccountById (file:///D:/Peter@Ritik/fb_integration/Backend/models/FacebookAccount.js:130:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:632:21)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:857:13)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:96:18"
+  },
+  {
+    "timestamp": "2025-09-26T06:43:01.888Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "User is not defined",
+    "stack": "ReferenceError: User is not defined\n    at scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:632:34)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:854:10)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:94:18"
+  },
+  {
+    "timestamp": "2025-09-26T06:48:05.045Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "User is not defined",
+    "stack": "ReferenceError: User is not defined\n    at scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:632:34)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:854:10)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:94:18"
+  },
+  {
+    "timestamp": "2025-09-26T06:48:08.879Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "User is not defined",
+    "stack": "ReferenceError: User is not defined\n    at scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:632:34)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:854:10)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:94:18"
+  },
+  {
+    "timestamp": "2025-09-26T06:48:14.617Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "User is not defined",
+    "stack": "ReferenceError: User is not defined\n    at scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:632:34)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:854:10)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:94:18"
+  },
+  {
+    "timestamp": "2025-09-26T06:48:18.742Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "User is not defined",
+    "stack": "ReferenceError: User is not defined\n    at scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:632:34)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:854:10)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:94:18"
+  },
+  {
+    "timestamp": "2025-09-26T06:48:26.794Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "User is not defined",
+    "stack": "ReferenceError: User is not defined\n    at scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:632:34)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:854:10)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:94:18"
+  },
+  {
+    "timestamp": "2025-09-26T06:48:59.860Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "User is not defined",
+    "stack": "ReferenceError: User is not defined\n    at scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:632:34)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:854:10)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:94:18"
+  },
+  {
+    "timestamp": "2025-09-26T07:55:56.122Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "x is not defined",
+    "stack": "ReferenceError: x is not defined\n    at createConversation (file:///D:/Peter@Ritik/fb_integration/Backend/models/conversations.js:10:5)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:398:23\n    at async Promise.all (index 0)\n    at async saveScrapedData (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:416:24)\n    at async scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:748:5)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:850:10)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:94:18"
+  },
+  {
+    "timestamp": "2025-09-30T08:18:41.744Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapechatlist",
+    "errorType": "scrapingError",
+    "message": "No chat conversations found. The page structure might have changed.",
+    "stack": "Error: No chat conversations found. The page structure might have changed.\n    at scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:151:13)\n    at async watcher (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:674:29)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:132:12"
+  },
+  {
+    "timestamp": "2025-09-30T08:20:38.097Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapechatlist",
+    "errorType": "scrapingError",
+    "message": "No chat conversations found. The page structure might have changed.",
+    "stack": "Error: No chat conversations found. The page structure might have changed.\n    at scrapeChatList (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:151:13)\n    at async watcher (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:674:29)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:132:12"
+  }
+]
