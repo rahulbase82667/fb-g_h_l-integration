@@ -58,11 +58,6 @@ export async function updateChatUrls(accountId,chatUrls) {
         throw new Error(e.message || "Failed to get chat urls");
     }
 }
-export default {
-    addChatUrls,
-    getChatUrls,
-    updateChatUrls
-}
 export async function chatData(accountId) {
     try {
         if (!accountId) throw new Error("Account ID is required");
@@ -80,4 +75,9 @@ export async function chatData(accountId) {
         console.error("DB Error: getChatUrls:", e.message);
         throw new Error(e.message || "Failed to get chat urls");
     }
+}
+export default {
+    addChatUrls,
+    getChatUrls,
+    updateChatUrls
 }

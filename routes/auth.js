@@ -249,11 +249,11 @@ router.post('/reset-password', async (req, res) => {
 router.post('/change-name', authenticateToken, async (req, res) => {
   try {
     const { name } = req.body;
-    if(!name) {
+    if (!name) {
       return res.status(400).json({ success: false, error: 'Name is required' });
     }
     await User.changeName(req.user.id, name);
-    res.json({ success: true, message: 'Name changed successfully' });  
+    res.json({ success: true, message: 'Name changed successfully' });
   } catch (error) {
     console.error('Change name error:', error.message);
     res.status(500).json({ success: false, error: 'Failed to change name' });

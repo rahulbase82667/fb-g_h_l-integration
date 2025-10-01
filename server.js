@@ -10,7 +10,7 @@ import authRoutes from './routes/auth.js';
 import facebookRoutes from './routes/facebook.js';
 import ghlRoutes from './routes/ghl.js';
 import { getFacebookAccounts } from './models/FacebookAccount.js';
-import { scrapeChatList, sendMessage, scrapeSingleChat, scrapeChat, scrapeAllChats } from './services/scrapeMarketplaceMessages.js';
+import { scrapeChatList, sendMessage, scrapeSingleChat, scrapeChat, scrapeAllChats,watcher } from './services/scrapeMarketplaceMessages.js';
 import { getLastMessage } from './models/Message.js';
 import messageRouter from "./routes/message.js"; // adjust path if different
 import { authenticateToken } from './middleware/auth.js';
@@ -128,8 +128,11 @@ app.use('/api/g_h_l', ghlRoutes);
 app.use('/api/messages', messageRouter);
 app.use('/api/chats', conversationRouter);
 app.use("/api/scrape", scrapeRoutes);
-
-
+app.get('/watcher',async (req,res)=>{
+  let data=await watcher();
+  console.log(data.length)
+  res.json(data)
+})
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err.message);

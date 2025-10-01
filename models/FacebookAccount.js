@@ -222,7 +222,16 @@ export async function deleteFacebookAccount(id) {
   }
 }
 
-
+export async function getIds(){
+  try {
+    const rows = await query("SELECT id FROM fb_accounts where login_status='active'");
+    let ids=rows.map(item => item.id);
+    return ids;  
+  } catch (error) {
+    console.error("DB Error: getFacebookAccounts:", error.message);
+    throw new Error("Failed to fetch Facebook accounts");
+  }
+}
 
 export default {
   createFacebookAccount,
@@ -232,4 +241,5 @@ export default {
   getFacebookAccountById,
   checkUserExists,
   bulkCreateFacebookAccounts,
+  getIds
 };

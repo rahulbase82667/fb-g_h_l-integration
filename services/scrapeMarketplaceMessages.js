@@ -3,8 +3,9 @@ import { getFacebookAccountById } from "../models/FacebookAccount.js";
 import chatUrls, { getChatUrls, addChatUrls, updateChatUrls } from "../models/chatUrls.js"
 import { createConversation, appendToConversations } from "../models/conversations.js";
 import { createMessage, getLastMessage } from "../models/Message.js";
+import { addChats } from "../models/watcher.js";
 import { getConversationByUrl } from "../models/conversations.js"
-import { updateFacebookAccount } from "../models/FacebookAccount.js";
+import { updateFacebookAccount, getIds } from "../models/FacebookAccount.js";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { Keyboard, timeout } from "puppeteer";
@@ -12,204 +13,11 @@ import { convertToTimestamp } from "../utils/helpers.js";
 import dotenv from "dotenv";
 import axios from "axios";
 import { logError } from "../utils/logger.js";
-import { getInitalScrapeStatus,updateInitalScrapeStatus } from "../models/conversations.js";
-// import {User} from "../models/User.js";
+import { getInitalScrapeStatus, updateInitalScrapeStatus } from "../models/conversations.js";
+import { User } from "../models/User.js";
 dotenv.config();
 puppeteer.use(StealthPlugin());
 
-
-
-/**
- * Scrape Marketplace conversations + messages
- * 
- */
-
-
-
-// export async function scrapeChatList(accountId, options = {}) {
-//   const { maxConversations = 10, delayBetweenChats = 2000 } = options;
-//   let browser;
-
-//   try {
-//     // 1. Load account + cookies
-//     const account = await getFacebookAccountById(accountId);
-//     if (!account || !account.session_cookies) {
-//       throw new Error("Account or cookies not found");
-//     }
-
-//     const cookies = JSON.parse(account.session_cookies);
-//     const useProxy = account.proxy_url && account.proxy_port;
-
-//     // 2. Launch Puppeteer with better stealth settings
-//     browser = await puppeteer.launch({
-//       headless: true,
-//       args: [
-//         "--no-sandbox",
-//         ...(useProxy ? [`--proxy-server=${account.proxy_url}:${account.proxy_port}`] : []),
-
-//         "--disable-setuid-sandbox",
-//         "--disable-blink-features=AutomationControlled",
-//         "--disable-features=VizDisplayCompositor",
-//         '--disable-notifications'
-//       ],
-//       defaultViewport: { width: 1366, height: 768 }
-//     });
-
-//     const page = await browser.newPage();
-
-//     if (useProxy && account.proxy_user && account.proxy_password) {
-//       await page.authenticate({
-//         username: account.proxy_user,
-//         password: account.proxy_password
-//       });
-//     }
-//     // Set user agent to avoid detection
-//     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-
-//     // Set cookies
-//     await browser.setCookie(...cookies);
-
-//     // 3. Navigate to Facebook Messages
-//     console.log("Navigating to Facebook Messages...");
-//     await page.goto("https://www.facebook.com/messages", {
-//       waitUntil: "networkidle2",
-//       timeout: 30000
-//     });
-
-//     console.log("Page loaded, waiting for chat interface...");
-//     // Wait for Messenger button and click
-
-//     await page.evaluate(() => {
-//       const buttons = Array.from(document.querySelectorAll('div[role="button"]'));
-//       for (const btn of buttons) {
-//         if ([...btn.querySelectorAll('span')].some(span => span.textContent.includes('Marketplace'))) {
-//           btn.click();
-//           setTimeout(() => {
-//             console.log('clicked')
-//           }, 2000);
-//           return true;
-//         }
-//       }
-//       return false;
-//     });
-//     page.setDefaultTimeout(3000);
-//     await page.waitForSelector("div[role='main']", { timeout: 20000 });
-//     // Enhanced chat link extraction with error handling
-//     const chatList = await page.evaluate(() => {
-//       try {
-//         // Look for chat links in multiple possible locations
-//         const chatLinks = new Set();
-
-//         // Method 1: Direct message links
-//         document.querySelectorAll('a[href*="/messages/t/"]').forEach(link => {
-//           chatLinks.add(link.href);
-//         });
-
-//         // Method 2: Check for any links in chat containers
-//         document.querySelectorAll('[aria-label="Chats"] a, [data-testid="chat-list"] a').forEach(link => {
-//           if (link.href && link.href.includes('/messages/t/')) {
-//             chatLinks.add(link.href);
-//           }
-//         });
-
-//         return Array.from(chatLinks);
-//       } catch (error) {
-//         console.error('Error extracting chat links:', error);
-//         return [];
-//       }
-//     });
-//     const marketPlaceChatUrl = []
-//     const conversationsToProcess = Math.min(chatList.length, maxConversations);
-
-//     for (let i = 0; i < conversationsToProcess; i++) {
-
-//       try {
-//         const chatUrl = chatList[i];
-//         console.log(`Processing conversation ${i + 1}/${conversationsToProcess}`);
-
-//         // Navigate to individual chat
-//         await page.goto(chatUrl, {
-//           waitUntil: "networkidle2",
-//           timeout: 30000
-//         });
-
-//         // Wait for chat to load
-//         await page.waitForFunction(() => {
-//           return document.querySelector('div[role="main"]') &&
-//             document.querySelectorAll('div[role="row"]').length > 0;
-//         }, { timeout: 15000 });
-
-
-//         let chatPartner = await page.evaluate(() => {
-//           const target = Array.from(document.querySelectorAll('[aria-label]')).find(el =>
-//             el.getAttribute('aria-label').toLowerCase().includes('conversation')
-//           );
-//           return target ? target.querySelector('h2')?.textContent || null : null;
-//         });
-
-
-//         console.log(`Scraping conversation with: ${chatPartner}`);
-//         if (!chatPartner.includes('·')) {
-//           console.log('Not a valid conversation');
-//           continue
-//         }
-//         marketPlaceChatUrl.push({
-//           chatUrl,
-//           chatPartner
-//         })
-//       } catch (error) {
-//         console.error(`Error processing conversation ${i + 1}:`, error.message);
-//         continue;
-//       }
-//     }
-//     if (chatList.length === 0) {
-//       throw new Error("No chat conversations found. The page structure might have changed.");
-//     }
-//     let currentUrls = await getChatUrls(accountId);
-
-//     if (currentUrls && currentUrls.length > 0) {
-//       console.log('updating chat urls');
-//       await updateChatUrls(accountId, marketPlaceChatUrl);
-//     } else {
-//       console.log('adding chat urls');
-//       await addChatUrls(accountId, marketPlaceChatUrl);
-//     }
-
-
-
-//     console.log(`Found ${chatList.length} conversation(s)`);
-//     return {
-//       chatlist: marketPlaceChatUrl
-//     }
-//   } catch (error) {
-//     // try {
-//     //   await updateFacebookAccount(accountId, {
-//     //     // session_cookies: cookies,
-//     //     login_status: "error",
-//     //     last_error: error.message,
-//     //     last_scraped: new Date().toISOString()
-//     //   });
-//     // } catch (updateError) {
-//     //   logError({
-//     //     filename: "scrapemarketplacemessages.js",
-//     //     function: "scrapechatlist",
-//     //     errorType: "updateError",
-//     //     message: updateError.message,
-//     //     stack: updateError.stack,
-//     //   });
-//     //   // console.error("Failed to update account status:", updateError.message);
-//     // }
-//     // console.error("DB Error: scrapeChatList:", error.message);
-//     logError({
-//       filename: "scrapemarketplacemessages.js",
-//       function: "scrapechatlist",
-//       errorType: "scrapingError",
-//       message: error.message || "Failed to scrape chat list",
-//       stack: error.stack,
-//     });
-//     // throw new Error(error.message || "Failed to scrape chat list");
-//   }
-// }
 export async function scrapeChatList(accountId, options = {}) {
   const { maxConversations = 10, delayBetweenChats = 2000 } = options;
   let browser;
@@ -314,12 +122,14 @@ export async function scrapeChatList(accountId, options = {}) {
         }
 
         const rows = container.querySelectorAll('[role="row"]');
-
+        // const unreadStatus=rows.forEach((f) => f.innerText.split('\n').filter( (e) => console.log(e,e.includes("Unread message"))))
         rows.forEach(row => {
           const anchor = row.querySelector('a');
+          const unreadStatus = row.innerText.split('\n').filter((e) => e.includes("Unread message")).length > 0;
           if (anchor) {
             chatLinks.push({
               chatUrl: anchor.href,
+              unread: unreadStatus,
               chatPartner: row.innerText.split('\n')[0]
             });
           }
@@ -342,7 +152,6 @@ export async function scrapeChatList(accountId, options = {}) {
       throw new Error("No chat conversations found. The page structure might have changed.");
     }
     let currentUrls = await getChatUrls(accountId);
-    console.log('near about-------------')
     if (currentUrls && currentUrls.length > 0) {
       console.log('updating chat urls');
       await updateChatUrls(accountId, chatList);
@@ -483,8 +292,8 @@ export async function sendMessage(accountId, options = {}) {
 
 //////////////// crafting functions
 
-async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber = 0,initial_scrape_status) {
-  return await page.evaluate(async (chatPartner, Findtext, indexNumber,initial_scrape_status) => {
+async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber = 0, initial_scrape_status) {
+  return await page.evaluate(async (chatPartner, Findtext, indexNumber, initial_scrape_status) => {
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -607,7 +416,7 @@ async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber 
       // console.error("Error in message extraction:", error);
       return [];
     }
-  }, chatPartner, Findtext, indexNumber,initial_scrape_status);
+  }, chatPartner, Findtext, indexNumber, initial_scrape_status);
 }
 
 // export async function scrapeChat(accountId, chatUrls = [], Findtext = "345543443434", timeStamp = "", indexNumber = '') {
@@ -667,7 +476,7 @@ export async function scrapeChat(accountId, chatUrls = [], isRecursive = false, 
         console.log(chatUrl)
         // if(isRecursive){
         const conversation = await getConversationByUrl(chatUrl);
-        
+
         if (!conversation || conversation.length == 0) {
           console.log('appending to conversations');
           appendToConversations(accountId, chatUrl);
@@ -714,7 +523,7 @@ export async function scrapeChat(accountId, chatUrls = [], isRecursive = false, 
           };
         }
 
-        const getmessages = await extractMessagesFromPage(page, chatPartner, Findtext, indexNumber,initial_scrape_status);
+        const getmessages = await extractMessagesFromPage(page, chatPartner, Findtext, indexNumber, initial_scrape_status);
         if (getmessages.data == "stop") {
           continue
         }
@@ -848,6 +657,33 @@ export async function scrapeSingleChat(accountId, chatUrls, progressCallback = n
   // return Findtext;
   return await scrapeChat(accountId, chatUrls, false, progressCallback);
 }
+
+
+
+
+
+//////////////////////////////////----------------------------Watcher Function-------------------------------
+
+export async function watcher() {
+  const facebookAccount_ids = await getIds();
+
+  if (facebookAccount_ids.length > 0) {
+    for (const ID of facebookAccount_ids) {
+      console.log(ID);
+      const scrapedChatList = await scrapeChatList(ID);
+      let filteredChatList = [];
+      if (scrapeChatList.length > 0) {
+        filteredChatList = scrapedChatList.chatlist.filter((item) => item.unread == true).map((item) => item.chatUrl);  
+        // return filteredChatList
+       return await addChats(filteredChatList, ID);
+      }
+      
+
+    }
+  }
+  return false
+}
+
 
 
 
