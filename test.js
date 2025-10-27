@@ -9,8 +9,6 @@ const proxies = [
   "216.10.27.159:6837:tcdcmhjv:7as9anjfx7gl",
   "142.147.128.93:6593:tcdcmhjv:7as9anjfx7gl"
 ]
-
-
 const url = "https://btr.topscripts.in/peter_boyle@facebook_integration/test.php";
 
 export const runPuppeteerScript = async () => {

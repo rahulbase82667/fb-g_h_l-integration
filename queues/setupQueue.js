@@ -1,11 +1,11 @@
-// queues/scrapeQueue.js
+// queues/setupQueue.js
 import { Queue } from "bullmq";
 import Redis from "ioredis";
 
 // connect to Redis running locally
 const connection = new Redis(process.env.REDIS_URL);
 // console.log(connection)
-export const scrapeQueue = new Queue("scrapeQueue", {
+export const setupQueue = new Queue("setupQueue", {
   connection,
   defaultJobOptions: {
     attempts: 2, // retry twice if fail
@@ -15,4 +15,7 @@ export const scrapeQueue = new Queue("scrapeQueue", {
 });
 
 
-export default scrapeQueue;
+export default setupQueue;
+
+
+

@@ -5,23 +5,25 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import csv from "csv-parser";
-import ExcelJS from "exceljs";   
+import ExcelJS from "exceljs";
 import {
   createFacebookAccount,
   getFacebookAccounts,
   updateFacebookAccount,
   deleteFacebookAccount,
   bulkCreateFacebookAccounts,
-  checkUserExists 
+  checkUserExists
 } from "../models/FacebookAccount.js";
 import { validate, accountSchema } from '../utils/validation.js'; // adjust path
-import { loginFacebookAccount } from "../services/puppeteerLogin.js";
 import crypto from "crypto";
 import loginQueue from "../queues/loginQueue.js";
+import setupQueue from "../queues/setupQueue.js";
+import { sendMessage } from "../services/scrapeMarketplaceMessages.js";
 const router = express.Router();
 
 // Add account
 router.post('/add', validate(accountSchema), async (req, res) => {
+
   try {
     // req.body is validated and sanitized at this point
     const {
@@ -34,12 +36,12 @@ router.post('/add', validate(accountSchema), async (req, res) => {
       proxyPort,
       proxyUser,
       proxyPassword,
+      accountCookies,
     } = req.body;
-    const checkUserExist = await checkUserExists({email, phoneNumber });
-    console.log(checkUserExist);
-    if(checkUserExist){
-          res.status(409).json({ success: false, message: 'Accout with this email or phone number already exists' });
-
+    const checkUserExist = await checkUserExists({ email, phoneNumber });
+    if (checkUserExist) {
+      res.status(409).json({ success: false, message: 'Accout with this email or phone number already exists' });
+      return
     }
     // return 
     const passwordEncrypted = encrypt(password);
@@ -55,9 +57,15 @@ router.post('/add', validate(accountSchema), async (req, res) => {
       proxy_port: proxyPort,
       proxy_user: proxyUser,
       proxy_password: proxyPasswordEncrypted,
+      session_cookies: accountCookies
+
     });
 
+    const job = await setupQueue.add("", { id: userId });
+    console.log(job);
+
     res.status(201).json({ success: true, accountId });
+
   } catch (error) {
     console.error('Error adding FB account:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -86,7 +94,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
         .status(400)
         .json({ success: false, message: "No file uploaded" });
     }
-    const userId=req.body.userId;
+    const userId = req.body.userId;
     const filePath = req.file.path;
     const ext = path.extname(req.file.originalname).toLowerCase();
     console.log(`File uploaded to: ${filePath}`);
@@ -98,14 +106,16 @@ router.post("/upload", upload.single("file"), async (req, res) => {
 
     // ✅ Required headers
     const requiredHeaders = [
-      "facebook_email",
-      "facebook_phone",
-      "facebook_password",
-      "proxy_url",
-      "proxy_port",
-      "proxy_user",
-      "proxy_pass",
+      "Facebook Email",
+      "Facebook Phone",
+      "Facebook Password",
+      "Proxy Url",
+      "Proxy Port",
+      "Proxy User",
+      "Proxy Password",
+      "Account Cookies",
     ];
+
 
     // ✅ Handle .csv files
     if (ext === ".csv") {
@@ -114,14 +124,14 @@ router.post("/upload", upload.single("file"), async (req, res) => {
         fs.createReadStream(filePath)
           .pipe(csv())
           .on("headers", (fileHeaders) => {
-            headers = fileHeaders.map((h) => h.trim().toLowerCase());
+            headers = fileHeaders.map((h) => h.trim());
           })
           .on("data", (row) => results.push(row))
           .on("end", () => resolve(results))
           .on("error", reject);
       });
     }
-    
+
     // ✅ Handle .xlsx files
     else if (ext === ".xlsx") {
       const workbook = new ExcelJS.Workbook();
@@ -129,7 +139,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       const sheet = workbook.worksheets[0];
 
       headers = sheet.getRow(1).values.map((h) =>
-        typeof h === "string" ? h.trim().toLowerCase() : h
+        typeof h === "string" ? h.trim() : h
       );
       rows = [];
 
@@ -149,11 +159,11 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       fs.unlinkSync(filePath); // cleanup
       throw new Error("Unsupported file type. Please upload .csv or .xlsx");
     }
-     
+
 
     // ✅ Validate headers
     const missingHeaders = requiredHeaders.filter(
-      (h) => !headers.includes(h)
+      (h) => !headers.includes(h.trim())
     );
     if (missingHeaders.length > 0) {
       fs.unlinkSync(filePath);
@@ -162,39 +172,41 @@ router.post("/upload", upload.single("file"), async (req, res) => {
         message: `Missing required headers: ${missingHeaders.join(", ")}`,
       });
     }
-    
+    // return 
     // ✅ Map rows into account objects
-   rows = rows.map((row) => {
-  const normalizedRow = {};
-  Object.keys(row).forEach((key) => {
-    const cleanKey = key.trim().toLowerCase();
-    normalizedRow[cleanKey] = row[key];
-  });
-  return normalizedRow;
-});
+    rows = rows.map((row) => {
+      const normalizedRow = {};
+      Object.keys(row).forEach((key) => {
+        const cleanKey = key.trim();
+        normalizedRow[cleanKey] = row[key];
+      });
+      return normalizedRow;
+    });
 
-const accounts = rows.map((row) => {
-  return {
-    email: row["facebook_email"] || null,
-    phoneNumber: row["facebook_phone"] || null,
-    passwordEncrypted: row["facebook_password"]
-      ? encrypt(row["facebook_password"])
-      : null,
-    proxyUrl: row["proxy_url"] || null,
-    proxy_port: row["proxy_port"] || null,
-    proxy_user: row["proxy_user"] || null,
-    proxy_password: row["proxy_pass"] ? encrypt(row["proxy_pass"]) : null,
-  };
-});
+    // console.log(rows);
+    const accounts = rows.map((row) => {
+      return {
+        email: row["Facebook Email"] || null,
+        phoneNumber: row["Facebook Phone"] || null,
+        passwordEncrypted: row["Facebook Password"]
+          ? encrypt(row["Facebook Password"])
+          : null,
+        proxyUrl: row["Proxy Url"] || null,
+        proxy_port: row["Proxy Port"] || null,
+        proxy_user: row["Proxy User"] || null,
+        proxy_password: row["Proxy Password"] ? encrypt(row["Proxy Password"]) : null,
+        session_cookies:row["Account Cookies"]||null,
+      };
+    });
 
     // console.log(accounts);
     // return 
 
     // ✅ Bulk insert into DB
-    const result = await bulkCreateFacebookAccounts(userId,accounts);
-  console.log(result);
+    const result = await bulkCreateFacebookAccounts(userId, accounts);
+    console.log(result);
     fs.unlinkSync(filePath); // cleanup uploaded file
-
+    const job = await setupQueue.add("", { id: userId });
     res.status(201).json({
       success: true,
       message: "Accounts imported successfully",
@@ -247,10 +259,11 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// Delete account
+// Delete account`
 router.delete("/:id", async (req, res) => {
   try {
     await deleteFacebookAccount(req.params.id);
+    await 
     res.json({ success: true, message: "Account deleted" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -272,4 +285,61 @@ router.post("/login/:accountId", async (req, res) => {
   }
 });
 
+router.post("/messages/send", async (req, res) => {
+  const { accountId, chatUrl, text } = req.body;
+  // Input validation
+  if (!accountId || !chatUrl || !text) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing required fields: accountId, chatUrl, and text are all required.",
+    });
+  }
+  try {
+    // Try sending the message using sendMessage function
+   let messageStatus= await sendMessage(accountId, chatUrl, text);
+   if(messageStatus.success){
+     res.json({ success: true, message: "Message sent successfully" });
+   }
+   else{
+     res.json({ success: false, error: messageStatus.error });
+   }
+  } catch (error) {
+    // In case sendMessage throws an error, send an error response
+    console.error("Error in sending message:", error); // Optionally log the error for debugging
+    res.status(500).json({ success: false, message: error.message || "Failed to send message" });
+  }
+});
+
+
+router.patch("/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const data = req.body;
+    // console.log(data)
+    // return data;
+    const result = await updateFacebookAccount(id, data);
+    
+    res.status(200).json({ message: "Account updated", result });
+  } catch (err) {
+    console.error("Update Error:", err.message  );
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/setup/:accountId', async (req, res) => {
+  const { accountId } = req.params;
+  console.log(req.user);
+  // return
+  try {
+    const job = await setupQueue.add("setup-account", { id: req.user.id,fbAccountId:accountId });
+    return res.json({
+      success: true,
+      jobId: job.id,
+      accountId,
+      message: "Setup job enqueued",
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+})
 export default router;

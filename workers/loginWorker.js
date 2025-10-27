@@ -5,7 +5,7 @@ import { loginFacebookAccount } from "../services/puppeteerLogin.js";
 
 // const connection = new Redis(process.env.REDIS_URL);
 const connection = new Redis(process.env.REDIS_URL, {
-  maxRetriesPerRequest: null
+  maxRetriesPerRequest: null  
 });
 
 let io;
@@ -44,7 +44,7 @@ const worker = new Worker(
       throw err;
     }
   },
-  { connection }
+  { connection }  
 );
 
 // Log job events
@@ -53,7 +53,7 @@ worker.on("completed", (job, result) => {
     `🎉 Login job ${job.id} completed for account ${job.data.accountId}`,
     result
   );
-});
+}); 
 
 worker.on("failed", (job, err) => {
   console.error(

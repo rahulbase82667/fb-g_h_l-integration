@@ -50,7 +50,8 @@ export function convertToTimestamp(dateString) {
     );
     
     if (monthIndex === -1) {
-        throw new Error('Invalid month name');
+        return "";
+        throw new Error('Invalid month name'+match); 
     }
     
     // Parse time

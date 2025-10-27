@@ -205,7 +205,7 @@ router.get('/validate', authenticateToken, (req, res) => {
         email: req.user.email,
         role: req.user.role,
         reseller_id: req.user.reseller_id
-      }
+      },
     }
   });
 });

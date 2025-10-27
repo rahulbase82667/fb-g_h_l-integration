@@ -7,11 +7,7 @@ const connection = new Redis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null
 });
 let io;
-/*************  ✨ Windsurf Command ⭐  *************/
-/**
- * Set the Socket.IO instance for this worker.
 
-/*******  879c7c97-2ff7-4f68-ba0d-82215fbe6879  *******/
 export function setSocketIO(ioInstance) {
   io = ioInstance;
 }
@@ -23,14 +19,11 @@ const worker = new Worker(
     console.log("Worker got job:", job.id, "for account:", accountId);
     let isSingleChat = false;
     if (chatUrl) { isSingleChat = true;console.log("single chat")  }
-  
       console.log('running now')
-
     // 🔌 Notify frontend scraping started
     if (io) {
       io.emit("scrape-started", { accountId, jobId: job.id });
     }
-
     try {
       let result;
       // Wrap scrapeAllChats with progress reporting

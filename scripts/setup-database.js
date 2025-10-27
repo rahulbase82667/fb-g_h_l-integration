@@ -41,7 +41,7 @@ const setupDatabase = async () => {
             console.log(' Database schema created successfully');
 
         } catch (fileError) {
-            console.log('   Schema file not found, creating tables manually...');
+            console.log('Schema file not found, creating tables manually...');
 
             // Create tables manually (fallback)
             const tables = [

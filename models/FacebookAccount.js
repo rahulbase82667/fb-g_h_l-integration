@@ -1,6 +1,6 @@
 // models/facebookAccount.js
 import { query } from "../config/database.js";
-
+import { encrypt } from "../utils/encryption.js";
 /**
  * Create a new Facebook account record
  */
@@ -12,14 +12,15 @@ export async function createFacebookAccount(data) {
 
     const result = await query(
       `INSERT INTO fb_accounts 
-      (user_id, account_name, email, phone_number, password_encrypted, proxy_url,proxy_port, proxy_user,proxy_password,  login_status, status)
-      VALUES (?, ?, ?,?,?,?, ?, ?, ?, 'active', 'active')`,
+      (user_id, account_name, email, phone_number, password_encrypted, session_cookies, proxy_url,proxy_port, proxy_user,proxy_password,  login_status, status)
+      VALUES (?, ?, ?,?,?,?,?, ?, ?, ?, 'pending', 'active')`,
       [
         data.userId,
         data.accountName || null,
         data.email || null,
         data.phoneNumber || null,
         data.passwordEncrypted,
+        data.session_cookies || null,
         data.proxyUrl || null,
         data.proxy_port || null,
         data.proxy_user || null,
@@ -46,7 +47,7 @@ export async function checkUserExists(data) {
         data.phone_number,
       ]);
     }
-    if(result.length > 0){
+    if (result.length > 0) {
       return true;
     }
     return false;
@@ -70,20 +71,22 @@ export async function bulkCreateFacebookAccounts(userId, accounts) {
       acc.email || null,
       acc.phoneNumber || null,
       acc.passwordEncrypted,
+      acc.session_cookies,
       acc.proxyUrl || null,
       acc.proxy_port || null,
       acc.proxy_user || null,
       acc.proxy_password || null,
+      'pending',
       'active',
-      'active'
     ]);
 
-    const placeholders = values.map(() => '(?,?,?,?,?,?,?,?,?,?,?)').join(',');
+
+    const placeholders = values.map(() => '(?,?,?,?,?,?,?,?,?,?,?,?)').join(',');
     const flatValues = values.flat();
 
     const sql = `
       INSERT INTO fb_accounts 
-      (user_id, account_name, email, phone_number, password_encrypted, proxy_url, proxy_port, proxy_user, proxy_password, login_status, status)
+      (user_id, account_name, email, phone_number, password_encrypted, session_cookies, proxy_url, proxy_port, proxy_user, proxy_password, login_status, status)
       VALUES ${placeholders}
     `;
 
@@ -101,7 +104,7 @@ export async function bulkCreateFacebookAccounts(userId, accounts) {
  */
 export async function getFacebookAccounts() {
   try {
-    const rows = await query("SELECT id, account_name, user_id, email, phone_number, proxy_url, proxy_user,proxy_port, login_status FROM fb_accounts");
+    const rows = await query("SELECT id, account_name, user_id, email, phone_number, proxy_url, proxy_user,proxy_port,session_cookies,initial_setup_status, login_status,last_error FROM fb_accounts");
     return rows;
   } catch (error) {
     console.error("DB Error: getFacebookAccounts:", error.message);
@@ -112,6 +115,7 @@ export async function getFacebookAccounts() {
  * Get a single Facebook account by ID
  */
 export async function getFacebookAccountById(id) {
+  console.log(id)
   try {
     if (!id) throw new Error("Account ID is required");
 
@@ -130,31 +134,7 @@ export async function getFacebookAccountById(id) {
   }
 }
 
-/**
- * Update a Facebook account by ID
- */
-// export async function updateFacebookAccount(id, data) {
-//   try {
-//     if (!id) throw new Error("Account ID is required");
-//     console.log(data)
-//     console.log(`id is : ${id}`)
-//     const result = await query("UPDATE fb_accounts SET session_cookies = ?, last_login= ?, login_status= ? WHERE id = ?", [
-//       data.session_cookies, 
-//       data.last_login,
-//       data.login_status,
-//       id,
-//     ]);
 
-//     if (result.affectedRows === 0) {
-//       throw new Error("Facebook account not found");
-//     }
-
-//     return result;
-//   } catch (error) {
-//     console.error("DB Error: updateFacebookAccount:", error.message);
-//     throw new Error(error.message || "Failed to update Facebook account");
-//   }
-// }
 export async function updateFacebookAccount(id, data) {
   try {
     if (!id) throw new Error("Account ID is required");
@@ -162,23 +142,69 @@ export async function updateFacebookAccount(id, data) {
     const fields = [];
     const values = [];
 
-    // Conditionally add session_cookies
-    if (data.session_cookies !== undefined) {
-      fields.push("session_cookies = ?");
-      values.push(data.session_cookies ?? null); // Use null if undefined
+    // Conditionally add updatable fields
+    if (data.account_name !== undefined) {
+      fields.push("account_name = ?");
+      values.push(data.account_name ?? null);
+    }
+    
+    if (data.email !== undefined) {
+      fields.push("email = ?");
+      values.push(data.email ?? null);
     }
 
-    // Conditionally add last_login
+    if (data.phone_number !== undefined) {
+      fields.push("phone_number = ?");
+      values.push(data.phone_number ?? null);
+    }
+
+    if (data.proxy_url !== undefined) {
+      fields.push("proxy_url = ?");
+      values.push(data.proxy_url ?? null);
+    }
+
+    if (data.proxy_user !== undefined) {
+      fields.push("proxy_user = ?");
+      values.push(data.proxy_user ?? null);
+    }
+
+    if (data.proxy_port !== undefined) {
+      fields.push("proxy_port = ?");
+      values.push(data.proxy_port ?? null);
+    }
+
+    if (data.session_cookies !== undefined) {
+      fields.push("session_cookies = ?");
+      values.push(data.session_cookies ?? null);
+    }
+    if (data.proxy_password !== undefined) {
+      fields.push("proxy_password = ?");
+      values.push(encrypt(data.proxy_password) ?? null);
+    }
+
     if (data.last_login !== undefined) {
       fields.push("last_login = ?");
       values.push(data.last_login ?? null);
     }
 
-    // Conditionally add login_status
     if (data.login_status !== undefined) {
       fields.push("login_status = ?");
       values.push(data.login_status ?? null);
     }
+
+    if (data.last_error !== undefined) {
+      fields.push("last_error = ?");
+      values.push(data.last_error ?? null);
+    }
+    if (data.error_details !== undefined) {
+      fields.push("error_details = ?");
+      values.push(data.error_details ?? null);
+    }
+    if(data.resolve_error_retry_count !== undefined) {
+      fields.push("resolve_error_retry_count = ?");
+      values.push(data.resolve_error_retry_count ?? null);
+    }
+
 
     if (fields.length === 0) {
       throw new Error("No valid fields provided to update.");
@@ -222,17 +248,87 @@ export async function deleteFacebookAccount(id) {
   }
 }
 
-export async function getIds(){
+export async function getIds() {
   try {
     const rows = await query("SELECT id FROM fb_accounts where login_status='active'");
-    let ids=rows.map(item => item.id);
-    return ids;  
+    let ids = rows.map(item => item.id);
+    return ids;
   } catch (error) {
     console.error("DB Error: getFacebookAccounts:", error.message);
     throw new Error("Failed to fetch Facebook accounts");
   }
 }
 
+export async function fbAccountsForSetup(id) {
+  try {
+    // const rows = await query("SELECT id FROM fb_accounts WHERE user_id = ?", [id]);
+    const rows = await query("SELECT id FROM fb_accounts WHERE user_id = ? AND login_status = 'pending'", [id]);
+    // return rows.forEach((item) => item);
+    return rows.map(item => item.id);
+  } catch (error) {
+    console.error("DB Error: getFacebookAccounts:", error.message);
+    throw new Error("Failed to fetch Facebook accounts");
+  }
+}
+
+export async function getAccountsForLoginWatcher(userId) {
+  try {
+    const rows = await query("SELECT id FROM  fb_accounts");
+    if (rows.length == 0) return [];
+    const ids = rows.map(item => item.id);
+    return ids;
+  } catch (error) {
+    console.error("DB Error: getFacebookAccounts:", error.message);
+    throw new Error("Failed to fetch Facebook accounts");
+  }
+}
+
+
+export async function getAccountsWithErrors() {
+  try {
+    const rows = await query("SELECT id,initial_setup_status,error_details,resolve_error_retry_count FROM  fb_accounts where login_status = 'error'  AND (last_error !='Proxy Expired' AND last_error !='Cookies Expired')");
+    if (rows.length == 0) return [];
+    return rows
+  } catch (error) {
+    console.error("DB Error: getFacebookAccounts:", error.message);
+    throw new Error("Failed to fetch Facebook accounts");
+  }
+
+}
+export async function updateInitialSetupStatus(id) {
+  if (!id) return false;
+  try {
+    const result = await query("UPDATE fb_accounts SET initial_setup_status = '1' WHERE id = ?", [id]);
+    return result;
+  } catch (error) {
+    console.error("DB Error: getFacebookAccounts:", error.message);
+    throw new Error("Failed to fetch Facebook accounts");
+  }
+}
+export async function getPendingAccounts() {
+  try {
+    let rows = await query("SELECT id FROM fb_accounts where login_status = 'active' AND initial_setup_status = 0");
+    if (rows.length == 0) return [];
+    const ids = rows.map(item => item.id);
+
+    return ids
+  } catch (error) {
+    console.error("DB Error: getFacebookAccounts:", error.message);
+    throw new Error("Failed to fetch Facebook accounts");
+  }
+}
+export async function getPendingAccountsAfterActivation(id) {
+  try {
+    let rows = await query("SELECT id FROM fb_accounts where initial_setup_status = 0 AND id =?",[id]);
+    if (rows.length == 0) return [];
+    const ids = rows.map(item => item.id);
+
+    return ids
+  } catch (error) {
+    console.error("DB Error: getFacebookAccounts:", error.message);
+    throw new Error("Failed to fetch Facebook accounts");
+  }
+}
 export default {
   createFacebookAccount,
   getFacebookAccounts,
@@ -241,5 +337,11 @@ export default {
   getFacebookAccountById,
   checkUserExists,
   bulkCreateFacebookAccounts,
-  getIds
+  getIds,
+  getAccountsForLoginWatcher,
+  fbAccountsForSetup,
+  getAccountsWithErrors,
+  updateInitialSetupStatus,
+  getPendingAccounts,
+  getPendingAccountsAfterActivation
 };

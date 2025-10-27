@@ -9,9 +9,9 @@ import { testConnection } from './config/database.js';
 import authRoutes from './routes/auth.js';
 import facebookRoutes from './routes/facebook.js';
 import ghlRoutes from './routes/ghl.js';
-import { getFacebookAccounts } from './models/FacebookAccount.js';
-import { scrapeChatList, sendMessage, scrapeSingleChat, scrapeChat, scrapeAllChats,watcher } from './services/scrapeMarketplaceMessages.js';
-import { getLastMessage } from './models/Message.js';
+import { getFacebookAccounts,getAccountsForLoginWatcher } from './models/FacebookAccount.js';
+import { sendMessage, scrapeSingleChat, scrapeChatList, scrapeAllChats, watcher, schedular, errorWatcher,processPendingAccounts } from './services/scrapeMarketplaceMessages.js';
+import { getLastMessage,updateMessageIndex } from './models/Message.js';
 import messageRouter from "./routes/message.js"; // adjust path if different
 import { authenticateToken } from './middleware/auth.js';
 import conversationRouter from './routes/conversation.js';
@@ -22,6 +22,12 @@ import { setSocketIO } from "./workers/scraperWorker.js"; // 👈 add this
 import { scrapeQueue } from "./queues/scrapeQueue.js";
 import { loginQueue } from "./queues/loginQueue.js";
 import { appendToConversations } from './models/conversations.js';
+import {setup} from "./services/setup.js"
+import cron from 'node-cron';
+import { loginFacebookAccount, watcherForLogin } from './services/puppeteerLogin.js';
+import './workers/setupWorker.js'; // 👈 This starts the setupQueue worker
+import { decrypt } from './utils/encryption.js';
+
 // import {runPuppeteerScript}  from './test.js'
 dotenv.config();
 
@@ -75,7 +81,10 @@ app.use('/api', limiter);
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
+app.get('/pup-login',async (req, res) => {
+  let test=await loginFacebookAccount(1);
+   res.json(test)
+})
 // Health check endpoint
 app.get('/health', async (req, res) => {
   const dbStatus = await testConnection();
@@ -91,12 +100,13 @@ app.get('/testt', async (req, res) => {
 })
 app.get('/test-scraper', async (req, res) => {
   try {
-    const data = await scrapeSingleChat(1,["https://www.facebook.com/messages/t/742182578820330"]);
+    const data = await scrapeSingleChat(189, ["https://www.facebook.com/messages/t/25116679787935354/"]);
     // const data = await sendMessage(1);
     // const data = await scrapeMarketplaceMessagesTest(1);
     // const data = await scrapeAllChats(1, true);
-    // const data = await scrapeAllChats(1);
-    // const data = await scrapeChatList(1);
+    // const data = await scrapeAllChats(97);
+    // 
+    // const data = await scrapeChatList(170);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -106,7 +116,6 @@ app.get('/test-scraper', async (req, res) => {
 app.get('/test-query', async (req, res) => {
   try {
     const id = req.query.id;
-    console.log(req.query)
     const data = await getLastMessage(id);
     res.json(data);
   } catch (error) {
@@ -122,15 +131,30 @@ app.get('/', (req, res) => {
   });
 });
 app.get('/acc', getFacebookAccounts);
+app.get('/test1', async (req, res) => {
+  // res.json(await getAccountsForLoginWatcher(1))
+  // res.json(decrypt("6cea4b75cc5b9b750d8e82ebf8e962db"))
+  res.json(await updateMessageIndex("https://www.facebook.com/messages/t/24452627391033013/", "hello"))
+  // res.json(await errorWatcher())
+});
 app.use('/api/auth', authRoutes);
 app.use('/api/facebook', authenticateToken, facebookRoutes);
 app.use('/api/g_h_l', ghlRoutes);
 app.use('/api/messages', messageRouter);
 app.use('/api/chats', conversationRouter);
 app.use("/api/scrape", scrapeRoutes);
-app.get('/watcher',async (req,res)=>{
-  let data=await watcher();
+app.get('/watcher', async (req, res) => {
+  let data = await watcher();
   console.log(data.length)
+  res.json(data)
+})
+app.get('/setup',async (req, res) => {
+  const test= await setup();
+  res.json(test);
+})
+app.get('/sch', async (req, res) => {
+  let data = await schedular();
+  // console.log(data.length)
   res.json(data)
 })
 // Error handling middleware
@@ -170,6 +194,27 @@ const startServer = async () => {
       await loginQueue.clean(0, "completed");
       console.log("✅ Old jobs cleaned up at startup");
     })();
+    // cron.schedule('0 0 */2 * * *', async () => {
+    //   console.log(`[CRON] Running watcher and scheduler at ${new Date().toISOString()}`);
+    //   try {
+    //     await watcherForLogin();
+      
+    //   } catch (error) {
+    //     console.error('[CRON ERROR]', error.message);
+    //   }
+    // })
+//  cron.schedule('*/2 * * * *', async () => {
+//   console.log(`[CRON] Running watcher and scheduler at ${new Date().toISOString()}`);
+//   try {
+//     await watcher();
+//     await schedular();
+//     await errorWatcher();
+//     await processPendingAccounts();
+//   } catch (error) {
+//     console.error('[CRON ERROR]', error.message);
+//   }
+// });
+
   } catch (error) {
     console.error('Server startup failed:', error.message);
     process.exit(1);

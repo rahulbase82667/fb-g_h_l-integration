@@ -15,8 +15,8 @@ export const authenticateToken = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Get user from database
+    console.log(decoded)
+    // Get user from database 
     const users = await query(
       'SELECT id, email, role, reseller_id created_at FROM users WHERE id = ?',
       [decoded.userId]
