@@ -41,6 +41,6 @@ export const deleteChat = async (chatUrl) => {
 
 export const deleteAllChats = async () => {
     const sql = "DELETE FROM watcher where status = 1";
-    const [result] = await query(sql);
+    const result = await query(sql);
     return result.affectedRows;
 };

@@ -13,7 +13,6 @@ router.get("/conversations/:accountId", async (req, res) => {
             const conversation = await getConversationByUrl(chatUrl);
             conversations.push(conversation);
         }
-
         res.json({ success: true, conversations });
     } catch (error) {
         console.error("Error getting conversations:", error);

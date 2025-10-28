@@ -102,20 +102,19 @@ export async function bulkCreateFacebookAccounts(userId, accounts) {
 /**
  * Get all Facebook accounts
  */
-export async function getFacebookAccounts() {
+export async function getFacebookAccounts(userId) {
   try {
-    const rows = await query("SELECT id, account_name, user_id, email, phone_number, proxy_url, proxy_user,proxy_port,session_cookies,initial_setup_status, login_status,last_error FROM fb_accounts");
+    const rows = await query("SELECT id, account_name, user_id, email, phone_number, proxy_url, proxy_user,proxy_port,session_cookies,initial_setup_status, login_status,last_error FROM fb_accounts WHERE user_id = ?", [userId]);
     return rows;
   } catch (error) {
     console.error("DB Error: getFacebookAccounts:", error.message);
     throw new Error("Failed to fetch Facebook accounts");
-  } x
+  } 
 }
 /**
  * Get a single Facebook account by ID
  */
 export async function getFacebookAccountById(id) {
-  console.log(id)
   try {
     if (!id) throw new Error("Account ID is required");
 
@@ -264,6 +263,7 @@ export async function fbAccountsForSetup(id) {
     // const rows = await query("SELECT id FROM fb_accounts WHERE user_id = ?", [id]);
     const rows = await query("SELECT id FROM fb_accounts WHERE user_id = ? AND login_status = 'pending'", [id]);
     // return rows.forEach((item) => item);
+    console.log(rows)
     return rows.map(item => item.id);
   } catch (error) {
     console.error("DB Error: getFacebookAccounts:", error.message);
@@ -286,7 +286,7 @@ export async function getAccountsForLoginWatcher(userId) {
 
 export async function getAccountsWithErrors() {
   try {
-    const rows = await query("SELECT id,initial_setup_status,error_details,resolve_error_retry_count FROM  fb_accounts where login_status = 'error'  AND (last_error !='Proxy Expired' AND last_error !='Cookies Expired')");
+    const rows = await query("SELECT id,initial_setup_status,error_details,resolve_error_retry_count FROM  fb_accounts where login_status = 'error' AND last_error !='Cookies Expired'");
     if (rows.length == 0) return [];
     return rows
   } catch (error) {

@@ -11,12 +11,13 @@ let io;
 export function setSocketIO(ioInstance) {
   io = ioInstance;
 }
-
 const worker = new Worker(
   "scrapeQueue",
   async (job) => {
     const { accountId, chatUrl } = job.data;
+    // console.log(job.data)
     console.log("Worker got job:", job.id, "for account:", accountId);
+    // return;
     let isSingleChat = false;
     if (chatUrl) { isSingleChat = true;console.log("single chat")  }
       console.log('running now')
@@ -46,9 +47,7 @@ const worker = new Worker(
         }
       });
     }
-
       console.log("Finished scraping account:", accountId);
-
       if (io) {
         io.emit("scrape-completed", {
           accountId,

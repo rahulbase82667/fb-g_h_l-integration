@@ -14,6 +14,9 @@ import dotenv from "dotenv";
 import { logError } from "../utils/logger.js";
 import { getInitalScrapeStatus, updateInitalScrapeStatus } from "../models/conversations.js";
 import { decrypt } from "../utils/encryption.js";
+import { waitForSelectorWithRetry } from "../utils/helpers.js"
+import { acquireLock, releaseLock } from "../services/redisLock.js";
+
 // import { trace } from "bullmq";
 dotenv.config();
 puppeteer.use(StealthPlugin());
@@ -33,7 +36,7 @@ export async function scrapeChatList(accountId) {
 
     // 2. Launch Puppeteer with better stealth settings
     browser = await puppeteer.launch({
-      headless: false,
+      headless: true,
       args: [
         "--no-sandbox",
         ...(useProxy ? [`--proxy-server=${account.proxy_url}:${account.proxy_port}`] : []),
@@ -80,7 +83,7 @@ export async function scrapeChatList(accountId) {
       };
     }
     console.log("Page loaded, waiting for chat interface...");
-  
+
     const texts = await page.$$eval('.core', els => els.map(el => el.textContent.trim()));
     if (texts.length > 0 && texts[0].includes('something went wrong')) {
       throw new Error('Cookies Expired');
@@ -90,17 +93,19 @@ export async function scrapeChatList(accountId) {
       throw new Error('Cookies Expired');
     }
 
-    try {
-      await page.waitForSelector('[aria-label="Thread list"] [aria-label="Chats"]', {
-        timeout: 30000
-      });
-    } catch (e) {
-      if (e.message.includes('Waiting for selector `[aria-label="Thread list"] [aria-label="Chats"]` failed')) {
-        throw new Error('Content failed to load, May be Proxy having slow internet connection or Try Updating fresh cookies');
-      } else {
-        throw new Error(e.message);
-      }
-    }
+    // try {
+    //   await page.waitForSelector('[aria-label="Thread list"] [aria-label="Chats"]', {
+    //     timeout: 30000
+    //   });
+    // } catch (e) {
+    //   if (e.message.includes('Waiting for selector `[aria-label="Thread list"] [aria-label="Chats"]` failed')) {
+    //     throw new Error('Content failed to load, May be Proxy having slow internet connection or Try Updating fresh cookies');
+    //   } else {
+    //     throw new Error(e.message);
+    //   }
+    // }
+
+    await waitForSelectorWithRetry(page, '[aria-label="Thread list"] [aria-label="Chats"]', { timeout: 30000 });
 
     async function clickMarketplaceWithRetries(page, maxRetries = 5) {
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -153,9 +158,9 @@ export async function scrapeChatList(accountId) {
       console.log("Marketplace button not found. Exiting...");
       return { chatlist: [] };
     }
-    page.setDefaultTimeout(3000);
-    await page.waitForSelector("div[role='main']", { timeout: 20000 });
-    await page.waitForSelector('[aria-label="Marketplace"]', { timeout: 20000 });
+    // await page.waitForSelector("div[role='main']", { timeout: 20000 });
+    await waitForSelectorWithRetry(page, "div[role='main']", { timeout: 20000 });
+    await waitForSelectorWithRetry(page, '[aria-label="Marketplace"]', { timeout: 20000 });
     async function getChatListWithRetries(page, maxRetries = 5) {
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         const chatList = await page.evaluate(async () => {
@@ -347,7 +352,7 @@ export async function sendMessage(accountId, chatUrl, text) {
 
     // 2. Launch Puppeteer with better stealth settings
     browser = await puppeteer.launch({
-      headless: false,
+      headless: true,
       args: [
         "--no-sandbox",
         ...(useProxy ? [`--proxy-server=${account.proxy_url}:${account.proxy_port}`] : []),
@@ -383,16 +388,17 @@ export async function sendMessage(accountId, chatUrl, text) {
       throw new Error('Cookies Expired');
     }
     // Wait for chat input box to load
-    try {
-      await page.waitForSelector('div[role="textbox"]', { timeout: 20000 });
-    } catch (e) {
-      if (e.message.includes('Waiting for selector `div[role="textbox"]` failed')) {
-        throw new Error('Content failed to load, May be Proxy having slow internet connection or Try Updating fresh cookies');
-      }
-      else {
-        throw new Error(e.message);
-      }
-    }
+    // try {
+    //   await page.waitForSelector('div[role="textbox"]', { timeout: 20000 });
+    // } catch (e) {
+    //   if (e.message.includes('Waiting for selector `div[role="textbox"]` failed')) {
+    //     throw new Error('Content failed to load, May be Proxy having slow internet connection or Try Updating fresh cookies');
+    //   }
+    //   else {
+    //     throw new Error(e.message);
+    //   }
+    // }
+    await waitForSelectorWithRetry(page, 'div[role="textbox"]', { timeout: 20000 });
     // Type the message in the input box
     await page.click('div[role="textbox"]');
     let str = text.split('');
@@ -445,137 +451,264 @@ export async function sendMessage(accountId, chatUrl, text) {
   }
 }
 
-async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber = 0, initial_scrape_status) {
-  return await page.evaluate(async (chatPartner, Findtext, indexNumber, initial_scrape_status) => {
-    function sleep(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-    function getLatestMesssage() {
-      let arr = [];
-      let text = document.querySelector('div[aria-label*="Messages in conversation titled"]')
-        .querySelectorAll('div[role="row"]')
-        .forEach((e) => { arr.push(e) });
-      let response = arr[arr.length - 1].innerText.split('\n');
-      return response
-    }
-    // if (isRecursive) {
-    const latestMessage = getLatestMesssage();
-    if (latestMessage[1].includes(Findtext) && Findtext !== null) {
-      return { success: true, data: "stop" };
-      // }
-    }
-    try {
-      const conversationContainer = document.querySelector('div[aria-label*="Messages in conversation titled"]');
-      if (conversationContainer && !initial_scrape_status) {
-        const container = conversationContainer.lastChild.lastChild;
-        console.log(container);
-        let attempts = 0;
-        while (attempts < 20) { // prevent infinite loop
-          const rows = Array.from(conversationContainer.querySelectorAll('div[role="row"]'));
-          const hasBuyerProfile = rows.some(r => r.textContent.includes(Findtext));
-          container.scrollBy(0, -1400); // scroll upward
-          await sleep(1000); // wait for more messages to load
-          attempts++;
-        }
+// async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber = 0, initial_scrape_status) {
+//   return await page.evaluate(async (chatPartner, Findtext, indexNumber, initial_scrape_status) => {
+//     function sleep(ms) {
+//       return new Promise(resolve => setTimeout(resolve, ms));
+//     }
+//     function getLatestMesssage() {
+//       let arr = [];
+//       let text = document.querySelector('div[aria-label*="Messages in conversation titled"]')
+//         .querySelectorAll('div[role="row"]')
+//         .forEach((e) => { arr.push(e) });
+//       let response = arr[arr.length - 1].innerText.split('\n');
+//       return response
+//     }
+//     // if (isRecursive) {
+//     const latestMessage = getLatestMesssage();
+//     if (latestMessage[1].includes(Findtext) && Findtext !== null) {
+//       return { success: true, data: "stop" };
+//       // }
+//     }
+//     try {
+//       const conversationContainer = document.querySelector('div[aria-label*="Messages in conversation titled"]');
+//       if (conversationContainer && !initial_scrape_status) {
+//         const container = conversationContainer.lastChild.lastChild;
+//         console.log(container);
+//         let attempts = 0;
+//         while (attempts < 20) { // prevent infinite loop
+//           const rows = Array.from(conversationContainer.querySelectorAll('div[role="row"]'));
+//           const hasBuyerProfile = rows.some(r => r.textContent.includes(Findtext));
+//           container.scrollBy(0, -1400); // scroll upward
+//           await sleep(1000); // wait for more messages to load
+//           attempts++;
+//         }
 
-      }
-      // 🔹 Step 2: Extract messages
-      const rows = document.querySelectorAll("div[role='row']");
-      let lastSeenTimestamp = null;
-      let messageCounter = indexNumber;  // Start from given indexNumber
+//       }
+//       // 🔹 Step 2: Extract messages
+//       const rows = document.querySelectorAll("div[role='row']");
+//       let lastSeenTimestamp = null;
+//       let messageCounter = indexNumber;  // Start from given indexNumber
 
-      let extractedMessages = [];
+//       let extractedMessages = [];
 
-      rows.forEach((row) => {
-        try {
-          if (!row.querySelector('div[dir="auto"]') && !row.textContent.trim()) return;
-          // Detect sender
-          let sender = "Unknown";
-          const senderSpan = row.querySelector("span");
-          const senderText = senderSpan?.innerText?.trim() || "";
-          if (senderText.includes("You sent") || senderText.includes("You:")) {
-            sender = "You";
-          } else if (row.closest('[data-testid*="outgoing"]') ||
-            row.querySelector('[aria-label*="You sent"]')) {
-            sender = "You";
-          } else {
-            sender = chatPartner;
-          }
+//       rows.forEach((row) => {
+//         try {
+//           if (!row.querySelector('div[dir="auto"]') && !row.textContent.trim()) return;
+//           // Detect sender
+//           let sender = "Unknown";
+//           const senderSpan = row.querySelector("span");
+//           const senderText = senderSpan?.innerText?.trim() || "";
+//           if (senderText.includes("You sent") || senderText.includes("You:")) {
+//             sender = "You";
+//           } else if (row.closest('[data-testid*="outgoing"]') ||
+//             row.querySelector('[aria-label*="You sent"]')) {
+//             sender = "You";
+//           } else {
+//             sender = chatPartner;
+//           }
 
-          // Extract text
-          const textElements = Array.from(row.querySelectorAll("div[dir='auto']"));
-          const text = textElements
-            .map(div => div.innerText?.trim() || "")
-            .filter(t => t.length > 0 &&
-              !t.includes("Rate") &&
-              !t.includes("Message sent") &&
-              !t.includes("Delivered") &&
-              !t.includes("Seen"))
-            .join(" ")
-            .trim();
+//           // Extract text
+//           const textElements = Array.from(row.querySelectorAll("div[dir='auto']"));
+//           const text = textElements
+//             .map(div => div.innerText?.trim() || "")
+//             .filter(t => t.length > 0 &&
+//               !t.includes("Rate") &&
+//               !t.includes("Message sent") &&
+//               !t.includes("Delivered") &&
+//               !t.includes("Seen"))
+//             .join(" ")
+//             .trim();
 
-          // Extract timestamp
-          let timestamp = null;
-          const timeSelectors = [
-            "h4 span",
-            "abbr[aria-label]",
-            "[title*='at']",
-            "time",
-            "[aria-label*='at']"
-          ];
+//           // Extract timestamp
+//           let timestamp = null;
+//           const timeSelectors = [
+//             "h4 span",
+//             "abbr[aria-label]",
+//             "[title*='at']",
+//             "time",
+//             "[aria-label*='at']"
+//           ];
 
-          for (const selector of timeSelectors) {
-            const timeEl = row.querySelector(selector);
-            if (timeEl) {
-              timestamp = timeEl.innerText ||
-                timeEl.getAttribute("aria-label") ||
-                timeEl.getAttribute("title");
-              if (timestamp) break;
-            }
-          }
+//           for (const selector of timeSelectors) {
+//             const timeEl = row.querySelector(selector);
+//             if (timeEl) {
+//               timestamp = timeEl.innerText ||
+//                 timeEl.getAttribute("aria-label") ||
+//                 timeEl.getAttribute("title");
+//               if (timestamp) break;
+//             }
+//           }
 
-          if (timestamp) {
-            lastSeenTimestamp = timestamp;
-          } else {
-            timestamp = lastSeenTimestamp;
-          }
-          if (!timestamp.includes(":")) {
-            timestamp = "";
-          }
-          // convertToTimestamp(timestamp)
-          if (text && text.length > 0) {
-            messageCounter++;
-            extractedMessages.push({
-              sender,
-              text,
-              timestamp,
-              messageIndex: messageCounter
-            });
-          }
-        } catch (rowError) {
-          console.error(`Error processing message row ${index}:`, rowError);
-        }
-      });
-      // console.log(extractedMessages)
-      return extractedMessages;
-    } catch (error) {
-      logError({
-        filename: "scrapemarketplacemessages.js",
-        function: "extractmessagesfrompage",
-        errorType: "scrapingError",
-        message: error.message,
-        stack: error.stack,
-      });
-      // console.error("Error in message extraction:", error);
-      return {
-        success: false,
-        data: []
-      };
-    }
-  }, chatPartner, Findtext, indexNumber, initial_scrape_status);
-}
+//           if (timestamp) {
+//             lastSeenTimestamp = timestamp;
+//           } else {
+//             timestamp = lastSeenTimestamp;
+//           }
+//           if (!timestamp.includes(":")) {
+//             timestamp = "";
+//           }
+//           // convertToTimestamp(timestamp)
+//           if (text && text.length > 0) {
+//             messageCounter++;
+//             extractedMessages.push({
+//               sender,
+//               text,
+//               timestamp,
+//               messageIndex: messageCounter
+//             });
+//           }
+//         } catch (rowError) {
+//           console.error(`Error processing message row ${index}:`, rowError);
+//         }
+//       });
+//       // console.log(extractedMessages)
+//       return extractedMessages;
+//     } catch (error) {
+//       logError({
+//         filename: "scrapemarketplacemessages.js",
+//         function: "extractmessagesfrompage",
+//         errorType: "scrapingError",
+//         message: error.message,
+//         stack: error.stack,
+//       });
+//       // console.error("Error in message extraction:", error);
+//       return {
+//         success: false,
+//         data: []
+//       };
+//     }
+//   }, chatPartner, Findtext, indexNumber, initial_scrape_status);
+// }
 
 // export async function scrapeChat(accountId, chatUrls = [], Findtext = "345543443434", timeStamp = "", indexNumber = '') {
+
+
+async function extractMessagesFromPage(page, chatPartner, Findtext, indexNumber = 0, initial_scrape_status) {
+  try {
+    const extractedMessages = await page.evaluate(async (chatPartner, Findtext, indexNumber, initial_scrape_status) => {
+      function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      function getLatestMesssage() {
+        const arr = [];
+        document.querySelector('div[aria-label*="Messages in conversation titled"]')
+          ?.querySelectorAll('div[role="row"]')
+          ?.forEach(e => arr.push(e));
+        const response = arr[arr.length - 1]?.innerText?.split('\n') || [];
+        return response;
+      }
+
+      try {
+        const latestMessage = getLatestMesssage();
+        if (latestMessage[1]?.includes(Findtext) && Findtext !== null) {
+          return { success: true, data: "stop" };
+        }
+
+        const conversationContainer = document.querySelector('div[aria-label*="Messages in conversation titled"]');
+        if (conversationContainer && !initial_scrape_status) {
+          const container = conversationContainer.lastChild?.lastChild;
+          let attempts = 0;
+          while (attempts < 20) {
+            const rows = Array.from(conversationContainer.querySelectorAll('div[role="row"]'));
+            const hasBuyerProfile = rows.some(r => r.textContent.includes(Findtext));
+            container?.scrollBy(0, -1400);
+            await sleep(1000);
+            attempts++;
+          }
+        }
+
+        const rows = document.querySelectorAll("div[role='row']");
+        let lastSeenTimestamp = null;
+        let messageCounter = indexNumber;
+        let extractedMessages = [];
+
+        rows.forEach((row, index) => {
+          try {
+            if (!row.querySelector('div[dir="auto"]') && !row.textContent.trim()) return;
+
+            // Detect sender
+            let sender = "Unknown";
+            const senderSpan = row.querySelector("span");
+            const senderText = senderSpan?.innerText?.trim() || "";
+            if (senderText.includes("You sent") || senderText.includes("You:")) {
+              sender = "You";
+            } else if (row.closest('[data-testid*="outgoing"]') || row.querySelector('[aria-label*="You sent"]')) {
+              sender = "You";
+            } else {
+              sender = chatPartner;
+            }
+
+            // Extract text
+            const textElements = Array.from(row.querySelectorAll("div[dir='auto']"));
+            const text = textElements
+              .map(div => div.innerText?.trim() || "")
+              .filter(t => t.length > 0 && !t.includes("Rate") && !t.includes("Message sent") && !t.includes("Delivered") && !t.includes("Seen"))
+              .join(" ")
+              .trim();
+
+            // Extract timestamp
+            let timestamp = null;
+            const timeSelectors = [
+              "h4 span",
+              "abbr[aria-label]",
+              "[title*='at']",
+              "time",
+              "[aria-label*='at']"
+            ];
+
+            for (const selector of timeSelectors) {
+              const timeEl = row.querySelector(selector);
+              if (timeEl) {
+                timestamp = timeEl.innerText ||
+                  timeEl.getAttribute("aria-label") ||
+                  timeEl.getAttribute("title");
+                if (timestamp) break;
+              }
+            }
+
+            if (timestamp) lastSeenTimestamp = timestamp;
+            else timestamp = lastSeenTimestamp;
+
+            if (timestamp && !timestamp.includes(":")) timestamp = "";
+
+            if (text && text.length > 0) {
+              messageCounter++;
+              extractedMessages.push({
+                sender,
+                text,
+                timestamp,
+                messageIndex: messageCounter
+              });
+            }
+          } catch (rowError) {
+            console.error(`Error processing message row ${index}:`, rowError);
+          }
+        });
+
+        return extractedMessages;
+      } catch (innerError) {
+        console.error("Error inside page.evaluate():", innerError);
+        return { success: false, data: [] };
+      }
+    }, chatPartner, Findtext, indexNumber, initial_scrape_status);
+
+    return extractedMessages;
+  } catch (error) {
+    // ✅ Log error here in Node context, where logError() exists
+    logError({
+      filename: "scrapemarketplacemessages.js",
+      function: "extractMessagesFromPage",
+      errorType: "scrapingError",
+      message: error.message,
+      stack: error.stack,
+    });
+    return { success: false, data: [] };
+  }
+}
+
+
 export async function scrapeChat(accountId, chatUrls = [], isRecursive = false, progressCallback = null) {
   let browser;
   let Findtext = null;
@@ -595,7 +728,7 @@ export async function scrapeChat(accountId, chatUrls = [], isRecursive = false, 
     const cookies = JSON.parse(account.session_cookies);
     // 2. Launch Puppeteer with better stealth settings
     browser = await puppeteer.launch({
-      headless: false
+      headless: true
 
       ,
       args: [
@@ -627,6 +760,12 @@ export async function scrapeChat(accountId, chatUrls = [], isRecursive = false, 
         const chatUrl = chatUrls[i];
         traceChat = chatUrl
         // console.log(chatUrl)
+
+        const locked = await acquireLock(chatUrl);
+        if (!locked) {
+          console.log(`⚠️ Skipping ${chatUrl} — already being scraped`);
+          continue; // Skip this URL
+        }
         const conversation = await getConversationByUrl(chatUrl);
         if (!conversation || conversation.length == 0) {
           console.log('appending to conversations');
@@ -641,18 +780,20 @@ export async function scrapeChat(accountId, chatUrls = [], isRecursive = false, 
         try {
           await page.goto(chatUrl, { waitUntil: 'networkidle2' });
         } catch (err) {
+          await releaseLock(chatUrl)
           throw new Error('Proxy Expired');
         }
         let emailInputs = await page.$$('input[name="email"]');
         // console.log(emailInputs);
         if (emailInputs.length > 0) {
+          await releaseLock(chatUrl)
           throw new Error('Cookies Expired');
         }
         // Wait for chat to load
         await page.waitForFunction(() => {
           return document.querySelector('div[role="main"]') &&
             document.querySelectorAll('div[role="row"]').length > 0;
-        }, { timeout: 20000 });
+        }, { timeout: 30000 });
         // get chat partner
         let chatPartner = await page.evaluate(() => {
           const target = Array.from(document.querySelectorAll('[aria-label]')).find(el =>
@@ -683,6 +824,7 @@ export async function scrapeChat(accountId, chatUrls = [], isRecursive = false, 
         const messages = filterMessagesAfterFindText(getmessages, Findtext);
         console.log(`Extracted ${messages.length} messages from conversation with ${chatPartner}`);
         await updateChats(chatUrl);
+
         // Store conversation data
         scrapedData.push({
           chatUrl,
@@ -696,6 +838,7 @@ export async function scrapeChat(accountId, chatUrls = [], isRecursive = false, 
         await updateFacebookAccount(accountId, {
           session_cookies: newCookies,
         })
+        await releaseLock(chatUrl);
         // 🔌 Report progress
         if (progressCallback) {
           progressCallback({
@@ -742,6 +885,7 @@ export async function scrapeChat(accountId, chatUrls = [], isRecursive = false, 
       console.error(`Error processing conversation :`, conversationError);
       // Continue with next conversation instead of failing compxletely
     }
+    
     console.log("Scraping completed successfully");
     // console.log(scrapedData);
     await saveScrapedData(scrapedData);
@@ -793,7 +937,7 @@ export async function scrapeAllChats(accountId, progressCallback = null) {
   console.log('Started scrapeAllChats');
 
   let chatList = await getChatUrls(accountId);
-
+  // return chatList;
   if (!chatList || chatList.length === 0) {
     console.log("Chat URLs not found, attempting to scrape...");
 
@@ -884,7 +1028,7 @@ export async function watcher() {
 ////////////////////////////////---------  schedular Function---------------------------
 
 export async function schedular() {
-  await deleteAllChats();
+  const deleted = await deleteAllChats();
   console.log('running schedular')
   try {
     let chats = await getChats();
@@ -951,13 +1095,29 @@ export async function errorWatcher() {
           throw new Error("Failed to scrape chat URLs");
         }
 
+        try {
+          await updateFacebookAccount(acc.id, {
+            // session_cookies: cookies,
+            login_status: "active",
+            last_error: null,
+            error_details: null,
+          });
+        } catch (updateError) {
+          logError({
+            filename: "scrapemarketplacemessages.js",
+            function: "ErrorWatcher",
+            errorType: "updateError",
+            message: updateError.message,
+            stack: updateError.stack,
+          });
+        }
       }
       catch (e) {
         if (acc.resolve_error_retry_count == 3) {
           await updateFacebookAccount(acc.id, {
             login_status: "error",
             resolve_error_retry_count: 0,
-            last_error: "Cookies Expired",
+            last_error: acc.last_error == "Proxy Expired" ? "Proxy Expired" : "Cookies Expired",
             error_details: null,
           })
           return

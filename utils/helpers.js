@@ -32,6 +32,7 @@ export function convertToTimestamp(dateString) {
     const match = dateString.match(dateRegex);
     
     if (!match) {
+        return "";
         throw new Error('Invalid date format');
     }
     
@@ -80,4 +81,44 @@ export function timestampToDate(timestamp) {
     return new Date(timestamp).toString();
 }
 
-// console.log(timestampToDate(convertToTimestamp("21 August at 17:48")));
+
+/**
+ * Waits for a selector with retry on timeout.
+ * @param {object} page - Puppeteer page instance
+ * @param {string} selector - CSS selector to wait for
+ * @param {object} options - Puppeteer waitForSelector options
+ * @param {number} retryTimeout - Timeout for retry (default: 120000 ms = 2 minutes)
+ * @param {number} maxRetries - Number of retries (default: 1)
+ * @returns {Promise<ElementHandle|null>}
+ */
+export async function waitForSelectorWithRetry(
+  page,
+  selector,
+  options = { timeout: 20000 },
+  retryTimeout = 120000,    
+  maxRetries = 1
+) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await page.waitForSelector(selector, options);
+    } catch (err) {
+      const isTimeout = err.message.includes("Timeout") || err.name === "TimeoutError";
+
+      if (isTimeout && attempt < maxRetries) {
+        console.warn(
+          `⚠️ [waitForSelectorWithRetry] Timeout waiting for ${selector}. Retrying with ${retryTimeout / 1000}s timeout...`
+        );
+        await new Promise((r) => setTimeout(r, 2000)); // small delay before retry
+        options.timeout = retryTimeout;
+      } else {
+        console.error(
+          `❌ [waitForSelectorWithRetry] Failed to find ${selector} after ${
+            attempt + 1
+          } attempt(s): ${err.message}`
+        );
+        return null; // don’t throw — just return null
+      }
+    }
+  }
+  return null;
+}

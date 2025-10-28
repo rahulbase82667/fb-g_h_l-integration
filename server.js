@@ -28,6 +28,7 @@ import { loginFacebookAccount, watcherForLogin } from './services/puppeteerLogin
 import './workers/setupWorker.js'; // 👈 This starts the setupQueue worker
 import { decrypt } from './utils/encryption.js';
 
+
 // import {runPuppeteerScript}  from './test.js'
 dotenv.config();
 
@@ -56,7 +57,7 @@ app.use(helmet());
 // }));
 app.use(cors({
   origin: '*',
-  // credentials: true
+  // credentials: true`
 }));
 
 // Rate limiting
@@ -98,13 +99,15 @@ app.get('/health', async (req, res) => {
 app.get('/testt', async (req, res) => {
   res.json(await appendToConversations(1, "https://www.facebook.com/messages/t/24452627391033013/"));
 })
+
+
 app.get('/test-scraper', async (req, res) => {
   try {
-    const data = await scrapeSingleChat(189, ["https://www.facebook.com/messages/t/25116679787935354/"]);
+    const data = await scrapeSingleChat(196, ["https://www.facebook.com/messages/t/1175185614550537/"]);
     // const data = await sendMessage(1);
     // const data = await scrapeMarketplaceMessagesTest(1);
     // const data = await scrapeAllChats(1, true);
-    // const data = await scrapeAllChats(97);
+    // const data = await scrapeAllChats(196);
     // 
     // const data = await scrapeChatList(170);
     res.json(data);
@@ -194,15 +197,7 @@ const startServer = async () => {
       await loginQueue.clean(0, "completed");
       console.log("✅ Old jobs cleaned up at startup");
     })();
-    // cron.schedule('0 0 */2 * * *', async () => {
-    //   console.log(`[CRON] Running watcher and scheduler at ${new Date().toISOString()}`);
-    //   try {
-    //     await watcherForLogin();
-      
-    //   } catch (error) {
-    //     console.error('[CRON ERROR]', error.message);
-    //   }
-    // })
+
 //  cron.schedule('*/2 * * * *', async () => {
 //   console.log(`[CRON] Running watcher and scheduler at ${new Date().toISOString()}`);
 //   try {
