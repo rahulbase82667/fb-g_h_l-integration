@@ -1,0 +1,26 @@
+[
+  {
+    "timestamp": "2025-10-28T09:28:20.733Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "Facebook account not found",
+    "stack": "Error: Facebook account not found\n    at getFacebookAccountById (file:///D:/Peter@Ritik/fb_integration/Backend/models/FacebookAccount.js:132:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:717:21)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:975:10)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:106:18"
+  },
+  {
+    "timestamp": "2025-10-28T09:28:21.670Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "Facebook account not found",
+    "stack": "Error: Facebook account not found\n    at getFacebookAccountById (file:///D:/Peter@Ritik/fb_integration/Backend/models/FacebookAccount.js:132:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:717:21)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:975:10)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:106:18"
+  },
+  {
+    "timestamp": "2025-10-28T09:31:13.478Z",
+    "filename": "scrapemarketplacemessages.js",
+    "function": "scrapeChat",
+    "errorType": "scrapingError",
+    "message": "Facebook account not found",
+    "stack": "Error: Facebook account not found\n    at getFacebookAccountById (file:///D:/Peter@Ritik/fb_integration/Backend/models/FacebookAccount.js:132:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async scrapeChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:717:21)\n    at async scrapeSingleChat (file:///D:/Peter@Ritik/fb_integration/Backend/services/scrapeMarketplaceMessages.js:975:10)\n    at async file:///D:/Peter@Ritik/fb_integration/Backend/server.js:106:18"
+  }
+]

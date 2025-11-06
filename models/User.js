@@ -5,7 +5,7 @@ import { query, transaction } from '../config/database.js';
 export class User {
   static async create(userData) {
     try {
-      const { name, email, password, role = 'user', reseller_id = null } = userData;
+      const { name, email, password, role = 'user' } = userData;
 
       // Hash password
       const saltRounds = 12;
@@ -13,13 +13,13 @@ export class User {
 
       // Insert user
       const result = await query(
-        'INSERT INTO users (name,email, password_hash, role, reseller_id) VALUES (?, ?, ?, ?, ?)',
-        [name, email, password_hash, role, reseller_id]
+        'INSERT INTO users (name,email, password_hash, role) VALUES (?, ?, ?, ?, )',
+        [name, email, password_hash, role]
       );
 
       // Get created user
       const users = await query(
-        'SELECT id,name, email, role, reseller_id, created_at FROM users WHERE id = ?',
+        'SELECT id,name, email, role, created_at FROM users WHERE id = ?',
         [result.insertId]
       );
 
@@ -44,7 +44,7 @@ export class User {
   static async findByEmail(email) {
     try {
       const users = await query(
-        'SELECT id,name, email, password_hash, role, reseller_id, created_at FROM users WHERE email = ?',
+        'SELECT id,name, email, password_hash, role,  created_at FROM users WHERE email = ?',
         [email]
       );
 
@@ -57,7 +57,7 @@ export class User {
   static async findById(id) {
     try {
       const users = await query(
-        'SELECT id,name, email, role, reseller_id, created_at FROM users WHERE id = ?',
+        'SELECT id,name, email, role,  created_at FROM users WHERE id = ?',
         [id]
       );
 
@@ -134,15 +134,12 @@ export class User {
     });
   }
 
-  static async list(limit = 50, offset = 0, reseller_id = null) {
+  static async list(limit = 50, offset = 0, ) {
     try {
-      let sql = 'SELECT id,name, email, role, reseller_id, created_at FROM users';
+      let sql = 'SELECT id,name, email, role, created_at FROM users';
       let params = [];
 
-      if (reseller_id !== null) {
-        sql += ' WHERE reseller_id = ?';
-        params.push(reseller_id);
-      }
+    
 
       sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
       params.push(limit, offset);

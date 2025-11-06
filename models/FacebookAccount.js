@@ -266,7 +266,7 @@ export async function fbAccountsForSetup(id) {
     console.log(rows)
     return rows.map(item => item.id);
   } catch (error) {
-    console.error("DB Error: getFacebookAccounts:", error.message);
+    console.error("DB Error: getFacebookAccounts:", error.message); 
     throw new Error("Failed to fetch Facebook accounts");
   }
 }

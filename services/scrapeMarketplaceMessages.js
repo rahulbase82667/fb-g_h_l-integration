@@ -303,7 +303,6 @@ export async function scrapeChatList(accountId) {
 async function saveScrapedData(scrapedData) {
   // Use a map to store all promises for all conversations and their messages
   const allPromises = scrapedData.flatMap(convo => {
-    console.log(convo);
     // For each conversation, create a promise to save it and its messages
     return (async () => {
       // Step 1: Save the conversation and get its ID1
@@ -313,7 +312,7 @@ async function saveScrapedData(scrapedData) {
         convo.accountId,
         convo.totalMessages,
         convo.scrapedAt
-      );
+      )
 
       // Step 2: Create a promise for each message and return them
       const messagePromises = convo.messages.map(msg =>

@@ -21,15 +21,13 @@ import { setSocketIO as setLoginSocket } from "./workers/loginWorker.js";
 import { setSocketIO } from "./workers/scraperWorker.js"; // 👈 add this
 import { scrapeQueue } from "./queues/scrapeQueue.js";
 import { loginQueue } from "./queues/loginQueue.js";
-import { appendToConversations } from './models/conversations.js';
 import {setup} from "./services/setup.js"
 import cron from 'node-cron';
 import { loginFacebookAccount, watcherForLogin } from './services/puppeteerLogin.js';
 import './workers/setupWorker.js'; // 👈 This starts the setupQueue worker
+import {createCustomField,createConversation } from "./services/ghlService.js"
+import {getGhlAccountsByUserId} from "./models/GHLAccount.js"
 import { decrypt } from './utils/encryption.js';
-
-
-// import {runPuppeteerScript}  from './test.js'
 dotenv.config();
 
 const app = express()
@@ -47,7 +45,7 @@ setLoginSocket(io);
 app.set('trust proxy', 1);
 
 // Security middleware 
-app.use(helmet());
+app.use(helmet());      
 //  uncomment it on production
 //app.use(cors({
 //   origin: process.env.NODE_ENV === 'production'
@@ -96,9 +94,6 @@ app.get('/health', async (req, res) => {
     environment: process.env.NODE_ENV
   });
 });
-app.get('/testt', async (req, res) => {
-  res.json(await appendToConversations(1, "https://www.facebook.com/messages/t/24452627391033013/"));
-})
 
 
 app.get('/test-scraper', async (req, res) => {
@@ -142,13 +137,19 @@ app.get('/test1', async (req, res) => {
 });
 app.use('/api/auth', authRoutes);
 app.use('/api/facebook', authenticateToken, facebookRoutes);
-app.use('/api/g_h_l', ghlRoutes);
+app.use('/api/ghl', ghlRoutes);
 app.use('/api/messages', messageRouter);
 app.use('/api/chats', conversationRouter);
 app.use("/api/scrape", scrapeRoutes);
 app.get('/watcher', async (req, res) => {
   let data = await watcher();
   console.log(data.length)
+  res.json(data)
+})
+
+app.get('/test-ghl',async (req,res)=>{
+  // let data=await createConversation("JgMiPa6k9Q1GVvgd2Xhl","zjD2LZToE6JKBzLZOTBu");
+  let data=await getGhlAccountsByUserId(2);
   res.json(data)
 })
 app.get('/setup',async (req, res) => {
@@ -182,9 +183,10 @@ const startServer = async () => {
     const dbConnected = await testConnection();
     if (!dbConnected) {
       console.error('Cannot start server: Database connection failed');
-      process.exit(1);
+      process.exit(1); 
     }
     server.listen(port, () => {
+      console.log('done')
       console.log(` Server running on port ${port}`);
       console.log(`Environment: ${process.env.NODE_ENV}`);
       console.log(` Health check: http://localhost:${port}/health`);
@@ -196,7 +198,7 @@ const startServer = async () => {
       await scrapeQueue.clean(0, "failed");   // if you don’t want failed jobs either
       await loginQueue.clean(0, "completed");
       console.log("✅ Old jobs cleaned up at startup");
-    })();
+    })(); 
 
 //  cron.schedule('*/2 * * * *', async () => {
 //   console.log(`[CRON] Running watcher and scheduler at ${new Date().toISOString()}`);

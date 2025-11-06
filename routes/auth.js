@@ -34,7 +34,6 @@ router.post('/register', validate(registerSchema), async (req, res) => {
           name: user.name,
           email: user.email,
           role: user.role,
-          reseller_id: user.reseller_id,
           created_at: user.created_at
         },
         token
@@ -88,7 +87,6 @@ router.post('/login', validate(loginSchema), async (req, res) => {
           name: user.name,
           email: user.email,
           role: user.role,
-          reseller_id: user.reseller_id,
           created_at: user.created_at
         },
         token
@@ -124,7 +122,6 @@ router.get('/profile', authenticateToken, async (req, res) => {
           name: user.name,
           email: user.email,
           role: user.role,
-          reseller_id: user.reseller_id,
           created_at: user.created_at
         }
       }
@@ -200,7 +197,6 @@ router.get('/validate', authenticateToken, (req, res) => {
         name: req.user.name,
         email: req.user.email,
         role: req.user.role,
-        reseller_id: req.user.reseller_id
       },
     }
   });
