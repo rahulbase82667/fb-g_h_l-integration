@@ -3,8 +3,15 @@ import Redis from "ioredis";
 import { scrapeAllChats, scrapeSingleChat } from "../services/scrapeMarketplaceMessages.js";
 import { logError } from "../utils/logger.js";
 // const connection = new Redis(process.env.REDIS_URL);
-const connection = new Redis(process.env.REDIS_URL, {
+// const connection = new Redis(process.env.REDIS_URL, {
+//   maxRetriesPerRequest: null
+// });
+const connection = new Redis({
+  host: process.env.REDIS_HOST || "localhost",
+  port: process.env.REDIS_PORT || 6379,
+  password: process.env.REDIS_PASSWORD || undefined,
   maxRetriesPerRequest: null
+
 });
 let io;
 

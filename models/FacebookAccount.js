@@ -6,20 +6,19 @@ import { encrypt } from "../utils/encryption.js";
  */
 export async function createFacebookAccount(data) {
   try {
-    if (!data.userId || !data.passwordEncrypted) {
+    if (!data.userId) {
       throw new Error("userId and passwordEncrypted are required");
     }
 
     const result = await query(
       `INSERT INTO fb_accounts 
-      (user_id, account_name, email, phone_number, password_encrypted, session_cookies, proxy_url,proxy_port, proxy_user,proxy_password,  login_status, status)
-      VALUES (?, ?, ?,?,?,?,?, ?, ?, ?, 'pending', 'active')`,
+      (user_id, account_name, email, phone_number, session_cookies, proxy_url,proxy_port, proxy_user,proxy_password,  login_status, status)
+      VALUES (?, ?, ?,?,?,?,?, ?, ?, 'pending', 'active')`,
       [
         data.userId,
         data.accountName || null,
         data.email || null,
         data.phoneNumber || null,
-        data.passwordEncrypted,
         data.session_cookies || null,
         data.proxyUrl || null,
         data.proxy_port || null,
@@ -70,7 +69,7 @@ export async function bulkCreateFacebookAccounts(userId, accounts) {
       acc.accountName || null,
       acc.email || null,
       acc.phoneNumber || null,
-      acc.passwordEncrypted,
+      // acc.passwordEncrypted,
       acc.session_cookies,
       acc.proxyUrl || null,
       acc.proxy_port || null,
@@ -81,12 +80,12 @@ export async function bulkCreateFacebookAccounts(userId, accounts) {
     ]);
 
 
-    const placeholders = values.map(() => '(?,?,?,?,?,?,?,?,?,?,?,?)').join(',');
+    const placeholders = values.map(() => '(?,?,?,?,?,?,?,?,?,?,?)').join(',');
     const flatValues = values.flat();
 
     const sql = `
       INSERT INTO fb_accounts 
-      (user_id, account_name, email, phone_number, password_encrypted, session_cookies, proxy_url, proxy_port, proxy_user, proxy_password, login_status, status)
+      (user_id, account_name, email, phone_number, session_cookies, proxy_url, proxy_port, proxy_user, proxy_password, login_status, status)
       VALUES ${placeholders}
     `;
 

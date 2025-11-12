@@ -25,9 +25,10 @@ import {setup} from "./services/setup.js"
 import cron from 'node-cron';
 import { loginFacebookAccount, watcherForLogin } from './services/puppeteerLogin.js';
 import './workers/setupWorker.js'; // 👈 This starts the setupQueue worker
-import {createCustomField,createConversation } from "./services/ghlService.js"
+import {createCustomField,createConversation,createContactAndConversationInGhl,sendMessageToGhl } from "./services/ghlService.js"
 import {getGhlAccountsByUserId} from "./models/GHLAccount.js"
 import { decrypt } from './utils/encryption.js';
+import {createMessage} from "./models/Message.js"
 dotenv.config();
 
 const app = express()
@@ -132,7 +133,8 @@ app.get('/acc', getFacebookAccounts);
 app.get('/test1', async (req, res) => {
   // res.json(await getAccountsForLoginWatcher(1))
   // res.json(decrypt("6cea4b75cc5b9b750d8e82ebf8e962db"))
-  res.json(await updateMessageIndex("https://www.facebook.com/messages/t/24452627391033013/", "hello"))
+  // res.json(await updateMessageIndex("https://www.facebook.com/messages/t/24452627391033013/", "hello"))
+  res.json(await createMessage(289,"Rekha · test",'test',null,8))
   // res.json(await errorWatcher())
 });
 app.use('/api/auth', authRoutes);
@@ -149,7 +151,15 @@ app.get('/watcher', async (req, res) => {
 
 app.get('/test-ghl',async (req,res)=>{
   // let data=await createConversation("JgMiPa6k9Q1GVvgd2Xhl","zjD2LZToE6JKBzLZOTBu");
-  let data=await getGhlAccountsByUserId(2);
+  // let data=await getGhlAccountsByUserId(2);
+  let test={
+    userId:2,
+    fbAccoutName:"testAcc",
+    threadId:"24749653684662792",
+    chatPartner:"Gourav · test item"
+  }
+  // let data=await createContactAndConversationInGhl(test);
+  let data=await sendMessageToGhl(2,267,"Ydsdsou","Sent just now");
   res.json(data)
 })
 app.get('/setup',async (req, res) => {

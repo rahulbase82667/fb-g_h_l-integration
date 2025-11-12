@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  app:
+    build: 
+      context: .
+      dockerfile: DockerFile.dockerfile
+    container_name: fb_ghl_app
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - redis
+      # - db
+    environment:
+      - NODE_ENV=development
+
+    command: npm run dev
+
+  redis:
+    image: redis:7-alpine
+    container_name: fb_ghl_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # db:
+  #   image: mysql:8.0
+  #   container_name: fb_ghl_db
+  #   restart: unless-stopped
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: root
+  #     MYSQL_DATABASE: fb_ghl
+  #     MYSQL_USER: fb_user
+  #     MYSQL_PASSWORD: fb_pass
+  #   ports:
+  #     - "3306:3306"
+  #   volumes:
+  #     - db_data:/var/lib/mysql
+  #     - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+volumes:
+  redis_data:
+  # db_data:

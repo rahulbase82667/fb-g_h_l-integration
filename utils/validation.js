@@ -85,7 +85,7 @@ export const accountSchema = Joi.object({
   accountName: Joi.string().required(),
   email: Joi.string().email().required(),
   phoneNumber: Joi.string().optional().allow(null, ''),
-  password: Joi.string().min(6).required(),
+  // password: Joi.string().min(6).required(),
   proxyUrl: Joi.string().optional().allow(null, ''),
   proxyPort: Joi.number().integer().min(1).max(65535).optional().allow(null,''),
   proxyUser: Joi.string().optional().allow(null, ''),

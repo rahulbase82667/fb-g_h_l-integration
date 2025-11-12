@@ -72,15 +72,15 @@ export async function scrapeChatList(accountId) {
       console.error("Navigation failed:", err.message);
 
       // Check for proxy tunnel error
-      if (err.message.includes('net::ERR_TUNNEL_CONNECTION_FAILED')) {
+      if (err.message.includes('net::ERR_TUNNEL_CONNECTION_FAILED') || err.message.includes('net::ERR_PROXY_CONNECTION_FAILED')) {
         throw new Error('Proxy Expired');
       }
 
-      return {
-        success: false,
-        chatlist: [],
-        error: 'Failed to load Facebook messages'
-      };
+      // return {
+      //   success: false,
+      //   chatlist: [],
+      //   error: 'Failed to load Facebook messages'
+      // };
     }
     console.log("Page loaded, waiting for chat interface...");
 
@@ -92,18 +92,6 @@ export async function scrapeChatList(accountId) {
     if (emailInputs.length > 0) {
       throw new Error('Cookies Expired');
     }
-
-    // try {
-    //   await page.waitForSelector('[aria-label="Thread list"] [aria-label="Chats"]', {
-    //     timeout: 30000
-    //   });
-    // } catch (e) {
-    //   if (e.message.includes('Waiting for selector `[aria-label="Thread list"] [aria-label="Chats"]` failed')) {
-    //     throw new Error('Content failed to load, May be Proxy having slow internet connection or Try Updating fresh cookies');
-    //   } else {
-    //     throw new Error(e.message);
-    //   }
-    // }
 
     await waitForSelectorWithRetry(page, '[aria-label="Thread list"] [aria-label="Chats"]', { timeout: 30000 });
 
@@ -300,9 +288,12 @@ export async function scrapeChatList(accountId) {
     if (browser) { await browser.close(); }
   }
 }
-async function saveScrapedData(scrapedData) {
+
+async function saveScrapedData(userId, scrapedData) {
+  // return scrapedData;
   // Use a map to store all promises for all conversations and their messages
   const allPromises = scrapedData.flatMap(convo => {
+    console.log('convo is: --------------------------',convo);
     // For each conversation, create a promise to save it and its messages
     return (async () => {
       // Step 1: Save the conversation and get its ID1
@@ -313,10 +304,11 @@ async function saveScrapedData(scrapedData) {
         convo.totalMessages,
         convo.scrapedAt
       )
+      console.log('convoId is : ',convo.accountId)
 
       // Step 2: Create a promise for each message and return them
       const messagePromises = convo.messages.map(msg =>
-        createMessage(convoId, msg.sender, msg.text, convertToTimestamp(msg.timestamp), msg.messageIndex)
+        createMessage(convo.conversationId, msg.sender, msg.text, convertToTimestamp(msg.timestamp), msg.messageIndex,userId)
       );
 
       // Return an array of promises for this conversation's messages
@@ -713,9 +705,11 @@ export async function scrapeChat(accountId, chatUrls = [], isRecursive = false, 
   let Findtext = null;
   let indexNumber = 0;
   let traceChat = null;
+  let userId;
   try {
     // 1. Load account + cookies
     const account = await getFacebookAccountById(accountId);
+    userId=account.user_id;
     if (!account || !account.session_cookies) {
       throw new Error("Account or cookies not found");
     }
@@ -765,10 +759,12 @@ export async function scrapeChat(accountId, chatUrls = [], isRecursive = false, 
           console.log(`⚠️ Skipping ${chatUrl} — already being scraped`);
           continue; // Skip this URL
         }
-        const conversation = await getConversationByUrl(chatUrl);
+        let conversation = await getConversationByUrl(chatUrl);
+        console.log('this is conversation: ----', conversation)
         if (!conversation || conversation.length == 0) {
           console.log('appending to conversations');
-          await appendToConversations(accountId, chatUrl);
+          conversation=await appendToConversations(accountId, chatUrl);
+          console.log('after appending to conversations', conversation);
         }
         const initial_scrape_status = await getInitalScrapeStatus(chatUrl);
         const GetLastMessage = await getLastMessage(conversation?.id);
@@ -825,13 +821,18 @@ export async function scrapeChat(accountId, chatUrls = [], isRecursive = false, 
         await updateChats(chatUrl);
 
         // Store conversation data
+        console.log('beforre pusing dat:', conversation)
         scrapedData.push({
+          conversationId:  typeof conversation === 'object' ? conversation.id : conversation,
           chatUrl,
           chatPartner,
+          accountId,
           messages,
           totalMessages: messages.length,
           scrapedAt: new Date().toISOString()
         });
+        // console.log(scrapedData)
+        // return scrapedData;
         await updateInitalScrapeStatus(chatUrl);
         const newCookies = await page.cookies();
         await updateFacebookAccount(accountId, {
@@ -884,10 +885,10 @@ export async function scrapeChat(accountId, chatUrls = [], isRecursive = false, 
       console.error(`Error processing conversation :`, conversationError);
       // Continue with next conversation instead of failing compxletely
     }
-    
+
     console.log("Scraping completed successfully");
     // console.log(scrapedData);
-    await saveScrapedData(scrapedData);
+    await saveScrapedData(userId,scrapedData);
     // return  scrapedData;
     return {
       success: true,

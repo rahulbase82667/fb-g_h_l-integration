@@ -19,6 +19,7 @@ import crypto from "crypto";
 import loginQueue from "../queues/loginQueue.js";
 import setupQueue from "../queues/setupQueue.js";
 import { sendMessage } from "../services/scrapeMarketplaceMessages.js";
+import { sendFaiiledMessageMail } from '../utils/email.js'
 const router = express.Router();
 
 // Add account
@@ -31,7 +32,7 @@ router.post('/add', validate(accountSchema), async (req, res) => {
       accountName,
       email,
       phoneNumber,
-      password,
+      // password,
       proxyUrl,
       proxyPort,
       proxyUser,
@@ -44,7 +45,7 @@ router.post('/add', validate(accountSchema), async (req, res) => {
       return
     }
     // return 
-    const passwordEncrypted = encrypt(password);
+    // const passwordEncrypted = encrypt(password);
     const proxyPasswordEncrypted = proxyPassword ? encrypt(proxyPassword) : null;
 
     const accountId = await createFacebookAccount({
@@ -52,7 +53,7 @@ router.post('/add', validate(accountSchema), async (req, res) => {
       accountName,
       email,
       phoneNumber,
-      passwordEncrypted,
+      // passwordEncrypted,
       proxyUrl,
       proxy_port: proxyPort,
       proxy_user: proxyUser,
@@ -62,8 +63,6 @@ router.post('/add', validate(accountSchema), async (req, res) => {
     });
 
     const job = await setupQueue.add("", { id: userId });
-    console.log(job);
-
     res.status(201).json({ success: true, accountId });
 
   } catch (error) {
@@ -106,9 +105,10 @@ router.post("/upload", upload.single("file"), async (req, res) => {
 
     // ✅ Required headers
     const requiredHeaders = [
+      "Account Name",
       "Facebook Email",
       "Facebook Phone",
-      "Facebook Password",
+      // "Facebook Password",
       "Proxy Url",
       "Proxy Port",
       "Proxy User",
@@ -186,16 +186,17 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     // console.log(rows);
     const accounts = rows.map((row) => {
       return {
+        accountName: row["Account Name"] || null,
         email: row["Facebook Email"] || null,
         phoneNumber: row["Facebook Phone"] || null,
-        passwordEncrypted: row["Facebook Password"]
-          ? encrypt(row["Facebook Password"])
-          : null,
+        // passwordEncrypted: row["Facebook Password"]
+        //   ? encrypt(row["Facebook Password"])
+        //   : null,
         proxyUrl: row["Proxy Url"] || null,
         proxy_port: row["Proxy Port"] || null,
         proxy_user: row["Proxy User"] || null,
         proxy_password: row["Proxy Password"] ? encrypt(row["Proxy Password"]) : null,
-        session_cookies:row["Account Cookies"]||null,
+        session_cookies: row["Account Cookies"] || null,
       };
     });
 
@@ -203,14 +204,15 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     // return 
 
     // ✅ Bulk insert into DB
+    // return {data: accounts}
     const result = await bulkCreateFacebookAccounts(userId, accounts);
-    console.log(result);
     fs.unlinkSync(filePath); // cleanup uploaded file
     const job = await setupQueue.add("", { id: userId });
     res.status(201).json({
       success: true,
       message: "Accounts imported successfully",
       insertedCount: result.affectedRows,
+      jobId: job.id
     });
   } catch (error) {
     console.error("Error uploading accounts:", error);
@@ -221,7 +223,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
 // List accounts
 router.get("/accounts", async (req, res) => {
   try {
-    const accounts = await getFacebookAccounts();
+    const accounts = await getFacebookAccounts(req.user.id);
     // const conversations=await getConversations();
     res.json({ success: true, accounts });
   } catch (error) {
@@ -263,8 +265,8 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   try {
     await deleteFacebookAccount(req.params.id);
-    await 
-    res.json({ success: true, message: "Account deleted" });
+    await
+      res.json({ success: true, message: "Account deleted" });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -286,7 +288,12 @@ router.post("/login/:accountId", async (req, res) => {
 });
 
 router.post("/messages/send", async (req, res) => {
-  const { accountId, chatUrl, text } = req.body;
+  console.log(req.user);
+  const { accountId, chatUrl, text, chatPartner } = req.body;
+  // const test = await sendFaiiledMessageMail(req.user.email, accountId, chatPartner);
+  // console.log(test);
+  // res.json({ success: false, message: test });
+
   // Input validation
   if (!accountId || !chatUrl || !text) {
     return res.status(400).json({
@@ -296,13 +303,14 @@ router.post("/messages/send", async (req, res) => {
   }
   try {
     // Try sending the message using sendMessage function
-   let messageStatus= await sendMessage(accountId, chatUrl, text);
-   if(messageStatus.success){
-     res.json({ success: true, message: "Message sent successfully" });
-   }
-   else{
-     res.json({ success: false, error: messageStatus.error });
-   }
+    let messageStatus = await sendMessage(accountId, chatUrl, text);
+    if (messageStatus.success) {
+      res.json({ success: true, message: "Message sent successfully" });
+    }
+    else {
+      await sendFaiiledMessageMail(req.user.email, accountId, chatPartner);
+      res.json({ success: false, error: messageStatus.error });
+    }
   } catch (error) {
     // In case sendMessage throws an error, send an error response
     console.error("Error in sending message:", error); // Optionally log the error for debugging
@@ -318,20 +326,19 @@ router.patch("/:id", async (req, res) => {
     // console.log(data)
     // return data;
     const result = await updateFacebookAccount(id, data);
-    
+
     res.status(200).json({ message: "Account updated", result });
   } catch (err) {
-    console.error("Update Error:", err.message  );
+    console.error("Update Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
 router.post('/setup/:accountId', async (req, res) => {
   const { accountId } = req.params;
-  console.log(req.user);
   // return
   try {
-    const job = await setupQueue.add("setup-account", { id: req.user.id,fbAccountId:accountId });
+    const job = await setupQueue.add("setup-account", { id: req.user.id, fbAccountId: accountId });
     return res.json({
       success: true,
       jobId: job.id,
